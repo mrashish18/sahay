@@ -13,9 +13,8 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.2-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](#)
 [![TailwindCSS](https://img.shields.io/badge/Tailwind_CSS-3.4-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](#)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16_pgvector-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)](#)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](#)
 
-[Live Demo](#) • [GitHub Repository](#) • [Project Documentation](#)
+[GitHub Repository](https://github.com/mrashish18/sahay)
 
 <br/>
 
@@ -270,7 +269,7 @@ SahayAI/
 
 ### Step 1: Clone Repository
 ```bash
-git clone https://github.com/your-username/sahay.git
+git clone https://github.com/mrashish18/sahay.git
 cd sahay
 ```
 
@@ -405,7 +404,7 @@ Contributions are welcome! Please follow these steps:
 ## 📄 License & Acknowledgements
 
 ### License
-This repository is released under the **MIT License**.
+Refer to repository details for licensing terms.
 
 ### Credits & Acknowledgements
 - **FastAPI** & **Pydantic**: Asynchronous Python API framework and data validation.
