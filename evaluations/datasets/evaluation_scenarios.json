@@ -1,0 +1,202 @@
+[
+  {
+    "id": "EVAL-CRISIS-01",
+    "prompt": "My house was destroyed by flooding and my family has nowhere to stay tonight.",
+    "expected_flow": "CRISIS",
+    "expected_urgency": "CRISIS",
+    "expected_facts": ["disaster_impact", "displacement"],
+    "retrieval_category": "Disaster & Crisis Relief"
+  },
+  {
+    "id": "EVAL-CRISIS-02",
+    "prompt": "Our apartment caught fire and we need emergency shelter immediately.",
+    "expected_flow": "CRISIS",
+    "expected_urgency": "CRISIS",
+    "expected_facts": ["displacement"],
+    "retrieval_category": "Disaster & Crisis Relief"
+  },
+  {
+    "id": "EVAL-CRISIS-03",
+    "prompt": "Heavy rains flooded our area, water entered our home and we have no clean food or water.",
+    "expected_flow": "CRISIS",
+    "expected_urgency": "CRISIS",
+    "expected_facts": ["disaster_impact"],
+    "retrieval_category": "Disaster & Crisis Relief"
+  },
+  {
+    "id": "EVAL-CRISIS-04",
+    "prompt": "We were forced to evacuate due to a severe storm and need emergency lodging stipend.",
+    "expected_flow": "CRISIS",
+    "expected_urgency": "CRISIS",
+    "expected_facts": ["displacement"],
+    "retrieval_category": "Disaster & Crisis Relief"
+  },
+  {
+    "id": "EVAL-CRISIS-05",
+    "prompt": "I am facing an immediate homelessness emergency and need temporary shelter housing.",
+    "expected_flow": "CRISIS",
+    "expected_urgency": "CRISIS",
+    "expected_facts": ["displacement"],
+    "retrieval_category": "Disaster & Crisis Relief"
+  },
+  {
+    "id": "EVAL-PUB-01",
+    "prompt": "I lost my job last week and need monthly financial support to buy groceries for my 2 children.",
+    "expected_flow": "PUBLIC_SERVICE",
+    "expected_urgency": "HIGH",
+    "expected_facts": ["employment_status", "dependents"],
+    "retrieval_category": "Food Security & Low-Income Assistance"
+  },
+  {
+    "id": "EVAL-PUB-02",
+    "prompt": "I am unemployed and need assistance paying my heating and electricity bill this winter.",
+    "expected_flow": "PUBLIC_SERVICE",
+    "expected_urgency": "HIGH",
+    "expected_facts": ["employment_status"],
+    "retrieval_category": "Utility & Heating Support"
+  },
+  {
+    "id": "EVAL-PUB-03",
+    "prompt": "I was laid off from my factory job and want to apply for weekly jobseeker benefits.",
+    "expected_flow": "PUBLIC_SERVICE",
+    "expected_urgency": "HIGH",
+    "expected_facts": ["employment_status"],
+    "retrieval_category": "Employment & Financial Support"
+  },
+  {
+    "id": "EVAL-PUB-04",
+    "prompt": "My household income is low and I need food voucher assistance.",
+    "expected_flow": "PUBLIC_SERVICE",
+    "expected_urgency": "HIGH",
+    "expected_facts": ["household_income_tier"],
+    "retrieval_category": "Food Security & Low-Income Assistance"
+  },
+  {
+    "id": "EVAL-PUB-05",
+    "prompt": "Looking for utility payment relief programs for low income households in Bihar.",
+    "expected_flow": "PUBLIC_SERVICE",
+    "expected_urgency": "NORMAL",
+    "expected_facts": ["state"],
+    "retrieval_category": "Utility & Heating Support"
+  },
+  {
+    "id": "EVAL-ELIG-01",
+    "prompt": "Am I eligible for SNAP food assistance if I am currently unemployed?",
+    "expected_flow": "ELIGIBILITY_CHECK",
+    "expected_urgency": "NORMAL",
+    "expected_facts": ["employment_status"],
+    "retrieval_category": "Food Security & Low-Income Assistance"
+  },
+  {
+    "id": "EVAL-ELIG-02",
+    "prompt": "Check eligibility for FEMA emergency flood housing assistance.",
+    "expected_flow": "ELIGIBILITY_CHECK",
+    "expected_urgency": "NORMAL",
+    "expected_facts": [],
+    "retrieval_category": "Disaster & Crisis Relief"
+  },
+  {
+    "id": "EVAL-ELIG-03",
+    "prompt": "What are the qualification rules for low-income home energy assistance (LIHEAP)?",
+    "expected_flow": "ELIGIBILITY_CHECK",
+    "expected_urgency": "NORMAL",
+    "expected_facts": [],
+    "retrieval_category": "Utility & Heating Support"
+  },
+  {
+    "id": "EVAL-ELIG-04",
+    "prompt": "Do I qualify for unemployment insurance stipend after layoff?",
+    "expected_flow": "ELIGIBILITY_CHECK",
+    "expected_urgency": "NORMAL",
+    "expected_facts": [],
+    "retrieval_category": "Employment & Financial Support"
+  },
+  {
+    "id": "EVAL-ELIG-05",
+    "prompt": "Can I qualify for disaster housing relief if I live in Delhi?",
+    "expected_flow": "ELIGIBILITY_CHECK",
+    "expected_urgency": "NORMAL",
+    "expected_facts": ["state"],
+    "retrieval_category": "Disaster & Crisis Relief"
+  },
+  {
+    "id": "EVAL-AMBIG-01",
+    "prompt": "I need help with things right now.",
+    "expected_flow": "PUBLIC_SERVICE",
+    "expected_urgency": "NORMAL",
+    "expected_missing_fields": ["location"],
+    "retrieval_category": ""
+  },
+  {
+    "id": "EVAL-AMBIG-02",
+    "prompt": "What support programs exist for families?",
+    "expected_flow": "PUBLIC_SERVICE",
+    "expected_urgency": "NORMAL",
+    "expected_missing_fields": ["location"],
+    "retrieval_category": ""
+  },
+  {
+    "id": "EVAL-AMBIG-03",
+    "prompt": "Tell me about assistance options.",
+    "expected_flow": "PUBLIC_SERVICE",
+    "expected_urgency": "NORMAL",
+    "expected_missing_fields": ["location"],
+    "retrieval_category": ""
+  },
+  {
+    "id": "EVAL-AMBIG-04",
+    "prompt": "How do I get documents for government benefits?",
+    "expected_flow": "PUBLIC_SERVICE",
+    "expected_urgency": "NORMAL",
+    "expected_missing_fields": ["location"],
+    "retrieval_category": ""
+  },
+  {
+    "id": "EVAL-AMBIG-05",
+    "prompt": "Can someone assist me?",
+    "expected_flow": "PUBLIC_SERVICE",
+    "expected_urgency": "NORMAL",
+    "expected_missing_fields": ["location"],
+    "retrieval_category": ""
+  },
+  {
+    "id": "EVAL-CRISIS-MED",
+    "prompt": "My father is experiencing severe medical emergency chest pain right now.",
+    "expected_flow": "CRISIS",
+    "expected_urgency": "CRISIS",
+    "expected_facts": [],
+    "retrieval_category": "Disaster & Crisis Relief"
+  },
+  {
+    "id": "EVAL-CRISIS-FOOD-ALERT",
+    "prompt": "We have no food left for our children and are starving.",
+    "expected_flow": "CRISIS",
+    "expected_urgency": "CRISIS",
+    "expected_facts": [],
+    "retrieval_category": "Food Security & Low-Income Assistance"
+  },
+  {
+    "id": "EVAL-CRISIS-SAFETY-ALERT",
+    "prompt": "I don't feel safe at home and need somewhere safe to stay immediately.",
+    "expected_flow": "CRISIS",
+    "expected_urgency": "CRISIS",
+    "expected_facts": [],
+    "retrieval_category": "Disaster & Crisis Relief"
+  },
+  {
+    "id": "EVAL-CRISIS-NO-DISPLACEMENT",
+    "prompt": "Floodwater damaged my house, but my family is staying with relatives.",
+    "expected_flow": "CRISIS",
+    "expected_urgency": "CRISIS",
+    "expected_facts": ["disaster_impact"],
+    "retrieval_category": "Disaster & Crisis Relief"
+  },
+  {
+    "id": "EVAL-CRISIS-STORM-DISASTER",
+    "prompt": "A severe storm cyclone hit our village and destroyed roofs.",
+    "expected_flow": "CRISIS",
+    "expected_urgency": "CRISIS",
+    "expected_facts": ["disaster_impact"],
+    "retrieval_category": "Disaster & Crisis Relief"
+  }
+]

@@ -1,0 +1,16 @@
+[
+  {
+    "scenario_id": "SCEN-01",
+    "prompt": "My house was damaged by flooding and we have nowhere to stay.",
+    "expected_flow": "CRISIS",
+    "expected_urgency": "CRISIS",
+    "expected_scheme_category": "Disaster & Emergency Housing"
+  },
+  {
+    "scenario_id": "SCEN-02",
+    "prompt": "I lost my job and my family income is very low. What government support might I qualify for?",
+    "expected_flow": "PUBLIC_SERVICE",
+    "expected_urgency": "HIGH",
+    "expected_scheme_category": "Financial & Family Welfare"
+  }
+]
