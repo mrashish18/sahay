@@ -1,6 +1,10 @@
+import logging
 from typing import List, Optional, Dict, Any
+
 from fastapi import APIRouter, HTTPException, status, Query
 from app.services.knowledge_base import knowledge_base_service
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -14,6 +18,6 @@ async def get_public_scheme(scheme_id: str) -> Dict[str, Any]:
     if not scheme:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Public assistance scheme ID '{scheme_id}' not found."
+            detail="The requested public assistance scheme was not found.",
         )
     return scheme
