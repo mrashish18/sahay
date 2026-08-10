@@ -45,7 +45,7 @@ scratch/
 .vercel
 .env*
 
-# Internal Docs & Alternate Screenshots Exclusions (Local Reference Only)
+# Internal Docs Exclusions (Local Reference Only)
 docs/crisis-navigator.md
 docs/demo-script.md
 docs/evaluation.md
@@ -54,7 +54,3 @@ docs/presentation_deck.md
 docs/security.md
 docs/submission_checklist.md
 docs/tte.md
-screenshots/sahay-emergency-flood-assistance.png
-screenshots/sahay-how-it-works.png
-screenshots/sahay-weather-query.png
-screenshots/sahay-weather-response.png
