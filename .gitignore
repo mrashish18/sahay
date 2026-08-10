@@ -40,3 +40,5 @@ Thumbs.db
 *.sqlite3
 *.db
 docker_data/
+
+scratch/
