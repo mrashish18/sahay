@@ -396,14 +396,43 @@ docker-compose up --build -d
 
 ---
 
-## 📜 License
+## 📜 Legal, License & Copyright
 
-License: See repository licensing information.
+### 📄 License
 
----
+> **License:** No open-source license has currently been declared for this repository.
 
-## © Copyright
+This project is currently provided for hackathon evaluation and demonstration purposes.
 
-Copyright © 2026 Ashish Kumar. All rights reserved.
+### © Copyright & Ownership
 
-*Sahay — because navigating public services shouldn't require navigating bureaucracy.*
+**Copyright © 2026 Ashish Kumar. All rights reserved.**
+
+- **Product & Project Ownership:** SAHAY / SAHAY 2.0 (Civic Navigator), including original source code, architecture specifications, documentation, design assets, and project materials, is owned by Ashish Kumar.
+- **Third-Party Open-Source Components:** Third-party libraries, frameworks, APIs, icons, fonts, and tools (including FastAPI, React, TypeScript, Vite, Tailwind CSS, PostgreSQL, pgvector, Pytest, Open-Meteo, Ollama, OpenAI, and Lucide Icons) remain subject to their respective open-source licenses and terms.
+- **Public & Government Information:** Government and public welfare information referenced by SAHAY remains subject to applicable official source terms (`.gov.in`, `usa.gov`) and is not claimed as proprietary by the project author.
+
+### 🤝 Acknowledgements
+
+- **FastAPI:** High-performance Python web framework powering the backend API.
+- **React & TypeScript:** Modern reactive UI library and type-safe development language.
+- **Vite & Tailwind CSS:** Rapid frontend build tooling and utility-first styling system.
+- **PostgreSQL & pgvector:** Relational database and vector similarity search extension.
+- **Open-Meteo API:** Real-time global weather forecast service.
+- **Ollama / OpenAI API:** Local and cloud LLM inference provider interfaces.
+- **Lucide Icons:** Clean, accessible open-source iconography.
+
+### 🔗 Third-Party Components
+
+SAHAY incorporates open-source libraries and external web services. All such third-party software and service APIs remain governed by their respective open-source licenses and terms of service.
+
+<br/>
+
+<p align="center">
+  <strong>SAHAY 2.0</strong><br>
+  <em>Because navigating public services shouldn't require navigating bureaucracy.</em>
+</p>
+
+<p align="center">
+  Built for civic empowerment • Designed for trust • Engineered for impact
+</p>
