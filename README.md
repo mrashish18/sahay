@@ -426,35 +426,18 @@ docker-compose up --build -d
 
 ---
 
-## 📜 Legal, License & Copyright
+## 📜 Legal & Acknowledgements
 
-### 📄 License
+**License:** No open-source license has currently been declared. SAHAY 2.0 is provided for hackathon evaluation and demonstration purposes.
 
-> **License:** No open-source license has currently been declared for this repository.
+**© Copyright 2026 Ashish Kumar — All rights reserved.**  
+SAHAY / SAHAY 2.0, including original source code, architecture, documentation, and project design assets, is owned by Ashish Kumar.
 
-This project is currently provided for hackathon evaluation and demonstration purposes.
+Third-party libraries, frameworks, APIs, icons, and services remain subject to their respective licenses and terms. Government/public-service information referenced by SAHAY remains subject to the terms of its official sources.
 
-### © Copyright & Ownership
+### 🤝 Built With
 
-**Copyright © 2026 Ashish Kumar. All rights reserved.**
-
-- **Product & Project Ownership:** SAHAY / SAHAY 2.0 (Civic Navigator), including original source code, architecture specifications, documentation, design assets, and project materials, is owned by Ashish Kumar.
-- **Third-Party Open-Source Components:** Third-party libraries, frameworks, APIs, icons, fonts, and tools (including FastAPI, React, TypeScript, Vite, Tailwind CSS, PostgreSQL, pgvector, Pytest, Open-Meteo, Ollama, OpenAI, and Lucide Icons) remain subject to their respective open-source licenses and terms.
-- **Public & Government Information:** Government and public welfare information referenced by SAHAY remains subject to applicable official source terms (`.gov.in`, `usa.gov`) and is not claimed as proprietary by the project author.
-
-### 🤝 Acknowledgements
-
-- **FastAPI:** High-performance Python web framework powering the backend API.
-- **React & TypeScript:** Modern reactive UI library and type-safe development language.
-- **Vite & Tailwind CSS:** Rapid frontend build tooling and utility-first styling system.
-- **PostgreSQL & pgvector:** Relational database and vector similarity search extension.
-- **Open-Meteo API:** Real-time global weather forecast service.
-- **Ollama / OpenAI API:** Local and cloud LLM inference provider interfaces.
-- **Lucide Icons:** Clean, accessible open-source iconography.
-
-### 🔗 Third-Party Components
-
-SAHAY incorporates open-source libraries and external web services. All such third-party software and service APIs remain governed by their respective open-source licenses and terms of service.
+FastAPI • React • TypeScript • Vite • Tailwind CSS • PostgreSQL • pgvector • Pytest • Open-Meteo • Ollama/OpenAI • Lucide Icons
 
 <br/>
 
