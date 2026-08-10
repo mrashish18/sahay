@@ -45,13 +45,15 @@
 - [How It Works](#-how-it-works)
 - [User Journeys](#-example-user-journeys)
 - [Tech Stack](#-tech-stack)
-- [Project Structure](#-project-structure)
+- [Project Architecture](#%EF%B8%8F-project-architecture)
+- [Why This Architecture?](#-why-this-architecture)
 - [Run Locally](#%EF%B8%8F-run-locally)
 - [Trust & Safety Principles](#-trust--safety-principles)
 - [Hackathon Highlights](#-hackathon-highlights)
 - [Future Roadmap](#%EF%B8%8F-future-roadmap)
 - [Contributing](#-contributing)
-- [License & Acknowledgements](#-license--acknowledgements)
+- [License](#-license)
+- [Built With & Acknowledgements](#-built-with--acknowledgements)
 
 ---
 
@@ -384,62 +386,100 @@ User Input (English / Hinglish / Regional)
 
 ---
 
-## 📁 Project Structure
+## 🏗️ Project Architecture
+
+Sahay separates **conversational intelligence**, **deterministic eligibility evaluation**, **crisis safety routing**, **live information retrieval**, and **frontend presentation** into independent, composable service modules. Each concern has its own file, its own tests, and its own data boundaries.
 
 ```text
 sahay/
-├── backend/
+│
+├── backend/                           ── Python / FastAPI backend
 │   ├── app/
-│   │   ├── api/                  # REST API routes (/api/v1/chat, health)
-│   │   ├── models/               # Pydantic & SQLAlchemy data schemas
-│   │   ├── services/             # Core Sahay engine services
-│   │   │   ├── ai_orchestrator.py        # Central intelligence flow router
-│   │   │   ├── semantic_understanding.py # Query normalization & ambiguity guard
-│   │   │   ├── crisis_navigator.py       # Priority safety & emergency routing
-│   │   │   ├── eligibility_engine.py     # Deterministic rules-based evaluation
-│   │   │   ├── knowledge_base.py         # Authentic scheme dataset provider
-│   │   │   ├── rag_service.py            # Vector embeddings & similarity search
-│   │   │   ├── web_search_service.py     # Open-Meteo API & web search
-│   │   │   ├── conversation_memory.py    # Multi-turn context management
-│   │   │   ├── llm_provider.py           # Multi-provider LLM integration
-│   │   │   ├── situation_analyzer.py     # Fact extraction (income, location)
-│   │   │   ├── tool_registry.py          # Versioned tool management
-│   │   │   └── tte_engine.py             # Sandboxed Tool Execution Engine
-│   │   ├── config.py             # Settings & environment configuration
-│   │   └── main.py               # FastAPI application entrypoint
-│   ├── tests/                    # Backend pytest suite (12 test modules)
-│   ├── pyproject.toml            # Backend dependencies & build settings
-│   └── requirements.txt          # Python package requirements
-├── frontend/
+│   │   ├── api/v1/endpoints/          ── REST endpoints: chat, health, services, tools
+│   │   ├── models/                    ── Pydantic schemas & data models
+│   │   │   ├── schemas.py                 Response contracts (SahayResponse)
+│   │   │   ├── crisis.py                  Crisis data models
+│   │   │   └── eligibility.py             Eligibility data models
+│   │   ├── services/                  ── Core engine services
+│   │   │   ├── ai_orchestrator.py     ★   Central intelligence router
+│   │   │   ├── semantic_understanding.py ★ NLU, intent, entity extraction
+│   │   │   ├── conversation_memory.py ★   Multi-turn context & session state
+│   │   │   ├── conversation_router.py ★   Topic-switch & follow-up routing
+│   │   │   ├── crisis_navigator.py    ★   Safety-first emergency routing
+│   │   │   ├── eligibility_engine.py  ★   Deterministic rule evaluation
+│   │   │   ├── knowledge_base.py      ★   Authentic scheme dataset provider
+│   │   │   ├── web_search_service.py  ★   Open-Meteo weather & live search
+│   │   │   ├── llm_provider.py        ★   Multi-provider LLM layer (Ollama/OpenAI)
+│   │   │   ├── rag_service.py             pgvector similarity search
+│   │   │   ├── situation_analyzer.py      Fact extraction (income, location)
+│   │   │   ├── embedding_provider.py      Embedding generation
+│   │   │   ├── chunker.py                 Document chunking
+│   │   │   ├── tool_registry.py           Versioned tool management
+│   │   │   └── tte_engine.py              Sandboxed Tool Execution Engine
+│   │   ├── config.py                  ── Environment settings
+│   │   └── main.py                    ── FastAPI entrypoint
+│   ├── tests/                         ── 12 pytest modules
+│   ├── pyproject.toml
+│   └── requirements.txt
+│
+├── frontend/                          ── React + TypeScript + Tailwind CSS
 │   ├── src/
-│   │   ├── components/           # 16 React UI components
-│   │   │   ├── ChatInterface.tsx         # Main chat conversation view
-│   │   │   ├── StructuredResponseView.tsx# Civic response card renderer
-│   │   │   ├── Hero.tsx                  # Landing page hero section
-│   │   │   ├── Dashboard.tsx             # System dashboard
-│   │   │   ├── JudgeScenariosBar.tsx     # Pre-loaded demo scenarios
-│   │   │   └── ...                       # Header, Footer, QuickActions, etc.
-│   │   ├── services/             # Frontend API client
-│   │   ├── types/                # TypeScript interface definitions
-│   │   ├── App.tsx               # Main React application workspace
-│   │   ├── index.css             # Tailwind CSS tokens & styling
-│   │   └── main.tsx              # React DOM entrypoint
-│   ├── package.json              # Frontend dependencies & scripts
-│   └── vite.config.ts            # Vite bundler configuration
-├── data/
-│   └── raw/
-│       └── authentic_schemes.json # Verified government scheme dataset
-├── docs/                          # Architecture & policy documentation
-│   ├── architecture.md            # System architecture specification
-│   ├── crisis-navigator.md        # Crisis navigator design
-│   ├── jurisdiction-policy.md     # Multi-jurisdiction rules
-│   ├── tte.md                     # TTE security specification
-│   └── demo-script.md            # Demo walkthrough script
-├── screenshots/                   # Product screenshots
-├── docker-compose.yml             # Multi-container orchestration
-├── .env.example                   # Environment configuration template
-└── README.md                      # This file
+│   │   ├── App.tsx                    ★   Application root & state management
+│   │   ├── components/
+│   │   │   ├── ChatInterface.tsx      ★   Conversation view & message handling
+│   │   │   ├── StructuredResponseView.tsx  Civic response card renderer
+│   │   │   ├── Hero.tsx                    Landing page hero
+│   │   │   ├── Dashboard.tsx               System dashboard
+│   │   │   ├── JudgeScenariosBar.tsx       Pre-loaded demo scenarios
+│   │   │   ├── ChatInput.tsx               Message input bar
+│   │   │   ├── Header.tsx / Footer.tsx     Navigation chrome
+│   │   │   ├── QuickActions.tsx            Shortcut action cards
+│   │   │   ├── HowItWorks.tsx              Architecture explainer
+│   │   │   ├── TechnicalTrust.tsx          Trust & safety section
+│   │   │   ├── ToolRegistryModal.tsx       TTE inspector modal
+│   │   │   ├── TrustStrip.tsx              Trust indicator strip
+│   │   │   └── LoadingState / EmptyState / ErrorState
+│   │   ├── services/
+│   │   │   └── api.ts                 ★   Backend API client
+│   │   ├── types/
+│   │   │   └── index.ts                   TypeScript interfaces
+│   │   ├── index.css                      Tailwind tokens & styles
+│   │   └── main.tsx                       React DOM entrypoint
+│   ├── package.json
+│   ├── vite.config.ts
+│   ├── tailwind.config.js
+│   └── tsconfig.json
+│
+├── data/raw/
+│   └── authentic_schemes.json         ── Verified government scheme dataset
+│
+├── docs/                              ── Architecture & policy docs
+│   ├── architecture.md                    System architecture spec
+│   ├── crisis-navigator.md                Crisis navigator design
+│   ├── jurisdiction-policy.md             Multi-jurisdiction rules
+│   ├── tte.md                             TTE security spec
+│   └── demo-script.md                     Demo walkthrough
+│
+├── evaluations/datasets/              ── Benchmark & evaluation scenarios
+├── scripts/                           ── Data ingestion & indexing scripts
+├── screenshots/                       ── Product screenshots
+├── docker-compose.yml                 ── Multi-container orchestration
+├── .env.example                       ── Environment configuration template
+└── README.md
 ```
+
+> ★ marks the primary architectural files.
+
+---
+
+## 🧠 Why This Architecture?
+
+- **Fast semantic routing before expensive operations.** The Semantic Understanding Engine classifies intent and extracts entities *before* triggering database queries, API calls, or LLM inference — keeping response latency low for straightforward requests.
+- **Deterministic eligibility, not LLM guesswork.** The Eligibility Engine evaluates scheme criteria against confirmed user facts using explicit rules. The LLM never decides whether a citizen qualifies for a government program.
+- **Explicit crisis and safety routing.** Crisis detection runs as an independent, high-priority lane. Emergency situations bypass normal public-service flows and immediately surface safety steps and helplines.
+- **Conversation memory for multi-turn context.** Location, active scheme, jurisdiction, and time period are maintained across turns — so follow-up questions like *"Am I eligible for it?"* resolve correctly without re-stating context.
+- **Live information retrieval when freshness matters.** Weather forecasts and web search results come from real-time APIs (Open-Meteo), not cached training data.
+- **Frontend / backend separation.** The React frontend renders structured JSON contracts (`SahayResponse`) — it never parses unstructured LLM text. This keeps the UI predictable and testable.
 
 ---
 
@@ -603,28 +643,41 @@ Contributions are welcome! Please follow these steps:
 
 ---
 
-## 📄 License & Acknowledgements
+## 📄 License
 
-### License
+Copyright © 2026 Ashish Kumar. All rights reserved.
 
-Refer to repository details for licensing terms.
+Unless otherwise stated, the contents of this repository are provided for evaluation, demonstration, and hackathon purposes. No license is granted for redistribution, modification, or commercial use without explicit permission from the copyright holder.
 
-### Credits & Acknowledgements
+---
 
-- **FastAPI** & **Pydantic** — Asynchronous Python API framework and data validation
-- **React** & **Vite** — Frontend component engine and build pipeline
-- **PostgreSQL** & **pgvector** — Database storage and vector similarity search
-- **Open-Meteo** — Global open-source weather forecast API
-- **Ollama** — Local LLM runtime
-- **Lucide Icons** — Clean UI icon assets
-- **Tailwind CSS** — Utility-first CSS framework
+## 🙏 Built With & Acknowledgements
+
+| Technology | Role |
+| :--- | :--- |
+| **FastAPI** | Backend async API framework |
+| **Pydantic** | Data validation and response schemas |
+| **React** | Frontend component framework |
+| **Vite** | Frontend build tooling and dev server |
+| **TypeScript** | Frontend type safety |
+| **Tailwind CSS** | Utility-first UI styling |
+| **PostgreSQL + pgvector** | Persistent storage and vector similarity search |
+| **Ollama** | Local LLM runtime |
+| **Open-Meteo** | Live weather forecast API |
+| **Lucide Icons** | Interface iconography |
+| **Docker Compose** | Multi-container orchestration |
+| **Pytest** | Backend automated testing |
 
 ---
 
 <div align="center">
 
-**Built with ❤️ for civic empowerment**
+**Sahay — Civic Intelligence for Real-World Needs**
 
-*Sahay — because navigating public services shouldn't require navigating bureaucracy.*
+*Find the right help. Understand your options. Know what to do next.*
+
+Built for civic empowerment and responsible public-service navigation.
+
+© 2026 Ashish Kumar
 
 </div>
