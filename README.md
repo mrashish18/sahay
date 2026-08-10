@@ -99,15 +99,15 @@ The backend architecture separates interpretation, safety, decision-making, cont
 
 | Service | File | Responsibility |
 | :--- | :--- | :--- |
-| **Orchestration** | [`ai_orchestrator.py`](file:///backend/app/services/ai_orchestrator.py) | Coordinates end-to-end request processing workflow |
-| **Semantic NLU** | [`semantic_understanding.py`](file:///backend/app/services/semantic_understanding.py) | Extracts intent, facts, entities & handles ambiguity |
-| **Crisis Safety** | [`crisis_navigator.py`](file:///backend/app/services/crisis_navigator.py) | First-class priority routing for emergency & safety situations |
-| **Eligibility** | [`eligibility_engine.py`](file:///backend/app/services/eligibility_engine.py) | Code-verified deterministic rule criteria evaluation |
-| **Knowledge Base** | [`knowledge_base.py`](file:///backend/app/services/knowledge_base.py) | Accesses verified public-service scheme datasets |
-| **Memory** | [`conversation_memory.py`](file:///backend/app/services/conversation_memory.py) | Maintains multi-turn context & jurisdiction state |
-| **Live Search** | [`web_search_service.py`](file:///backend/app/services/web_search_service.py) | Retrieves real-time weather & live web information |
-| **LLM Provider** | [`llm_provider.py`](file:///backend/app/services/llm_provider.py) | Multi-provider LLM abstraction layer |
-| **Tool Execution** | [`tte_engine.py`](file:///backend/app/services/tte_engine.py) | Sandboxed tool proposal with AST static safety checks |
+| **Orchestration** | [`ai_orchestrator.py`](backend/app/services/ai_orchestrator.py) | Coordinates end-to-end request processing workflow |
+| **Semantic NLU** | [`semantic_understanding.py`](backend/app/services/semantic_understanding.py) | Extracts intent, facts, entities & handles ambiguity |
+| **Crisis Safety** | [`crisis_navigator.py`](backend/app/services/crisis_navigator.py) | First-class priority routing for emergency & safety situations |
+| **Eligibility** | [`eligibility_engine.py`](backend/app/services/eligibility_engine.py) | Code-verified deterministic rule criteria evaluation |
+| **Knowledge Base** | [`knowledge_base.py`](backend/app/services/knowledge_base.py) | Accesses verified public-service scheme datasets |
+| **Memory** | [`conversation_memory.py`](backend/app/services/conversation_memory.py) | Maintains multi-turn context & jurisdiction state |
+| **Live Search** | [`web_search_service.py`](backend/app/services/web_search_service.py) | Retrieves real-time weather & live web information |
+| **LLM Provider** | [`llm_provider.py`](backend/app/services/llm_provider.py) | Multi-provider LLM abstraction layer |
+| **Tool Execution** | [`tte_engine.py`](backend/app/services/tte_engine.py) | Sandboxed tool proposal with AST static safety checks |
 
 ---
 

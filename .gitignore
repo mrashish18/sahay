@@ -42,3 +42,5 @@ Thumbs.db
 docker_data/
 
 scratch/
+.vercel
+.env*

@@ -1,12 +1,29 @@
 import { SahayResponse, ToolDefinition, TTEProposal } from '../types';
 
-const API_BASE = '/api/v1';
+const metaEnv = (import.meta as any).env || {};
+const isLocalhost = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+
+const getBaseUrl = (): string => {
+  if (metaEnv.VITE_API_URL) {
+    return String(metaEnv.VITE_API_URL).replace(/\/$/, '');
+  }
+  if (isLocalhost || metaEnv.DEV) {
+    return 'http://localhost:8002';
+  }
+  return '';
+};
+
+const BASE_URL = getBaseUrl();
+const API_BASE = BASE_URL ? `${BASE_URL}/api/v1` : '/api/v1';
 
 export async function sendChatQuery(
   message: string,
   context: Record<string, any> = {},
   conversationId?: string
 ): Promise<SahayResponse> {
+  if (!BASE_URL && !isLocalhost) {
+    throw new Error('Frontend is deployed, but the FastAPI backend does not currently have a verified public deployment.');
+  }
   try {
     const response = await fetch(`${API_BASE}/chat`, {
       method: 'POST',
@@ -34,7 +51,7 @@ export async function sendChatQuery(
     return await response.json();
   } catch (err: any) {
     if (err.name === 'TypeError' || err.message?.includes('fetch') || err.message?.includes('Failed to fetch')) {
-      throw new Error('Unable to connect to Sahay backend. Please check that the server is running on http://localhost:8000 and try again.');
+      throw new Error(`Unable to connect to Sahay backend. Please ensure the backend server is running on ${BASE_URL} and try again.`);
     }
     throw err;
   }
@@ -42,7 +59,7 @@ export async function sendChatQuery(
 
 export async function checkHealth(): Promise<boolean> {
   try {
-    const res = await fetch('/health');
+    const res = await fetch(`${BASE_URL}/health`);
     if (res.ok) {
       const data = await res.json();
       return data.status === 'ok' || data.status === 'healthy';
