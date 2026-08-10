@@ -15,6 +15,7 @@ import { sendChatQuery } from './services/api';
 export function App() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [confirmedFacts, setConfirmedFacts] = useState<Record<string, any>>({});
+  const [conversationId, setConversationId] = useState<string>(() => `session-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isToolsModalOpen, setIsToolsModalOpen] = useState(false);
@@ -38,20 +39,26 @@ export function App() {
     try {
       // Merge accumulated confirmed facts with new context override
       const mergedContext = { ...confirmedFacts, ...contextOverride };
-      const response = await sendChatQuery(userText, mergedContext);
+      const response = await sendChatQuery(userText, mergedContext, conversationId);
 
-      // Accumulate extracted facts from response into confirmed facts memory
+      // Cleanly sync jurisdiction and extracted facts into confirmed facts memory
       if (response.situation?.extracted_facts) {
-        setConfirmedFacts((prev) => ({ ...prev, ...response.situation.extracted_facts }));
+        setConfirmedFacts((prev) => {
+          const nextFacts = { ...prev, ...response.situation.extracted_facts };
+          if (response.situation.extracted_facts.country === 'US') {
+            delete nextFacts.state;
+          }
+          return nextFacts;
+        });
       }
 
       // Generate natural conversational response text
       let naturalText = response.situation.summary;
 
-      if (response.missing_information && response.missing_information.length > 0) {
+      if (response.flow === 'PUBLIC_SERVICE' && response.missing_information && response.missing_information.length > 0) {
         const questionsList = response.missing_information.map((m, i) => `${i + 1}. ${m.question}`).join('\n');
         naturalText = `I can help you find relevant public assistance programs.\n\nTo narrow this down precisely, I just need a few details:\n${questionsList}`;
-      } else if (response.recommendations && response.recommendations.length > 0) {
+      } else if (response.recommendations && response.recommendations.length > 0 && response.flow === 'PUBLIC_SERVICE') {
         const top = response.recommendations[0];
         naturalText = `Based on what you've shared, I found verified programs that match your situation, led by **${top.title}**.\n\nBelow are the step-by-step guidance, required documents, and direct links to official government portals.`;
       }
@@ -76,6 +83,7 @@ export function App() {
   const handleReset = () => {
     setMessages([]);
     setConfirmedFacts({});
+    setConversationId(`session-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`);
     setError(null);
     setIsLoading(false);
   };

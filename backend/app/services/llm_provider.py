@@ -172,10 +172,10 @@ class MockLLMProvider(BaseLLMProvider):
             urgency_level = UrgencyLevel.NORMAL.value
             urgency_score = 0.40
             urgency_reason = "Query requesting structured eligibility evaluation."
-            summary = "User requesting eligibility evaluation for public welfare programs."
+            summary = "I can help check whether you may qualify for this program."
             missing_info.append({
-                "field": "income",
-                "question": "What is your approximate annual household income?",
+                "field": "location_and_family",
+                "question": "I can help check whether you may qualify for this program. I need a couple of details first: what is your current location and household situation?",
                 "importance": "high"
             })
         elif any(w in text_lower for w in self.CRISIS_KEYWORDS):
@@ -184,7 +184,7 @@ class MockLLMProvider(BaseLLMProvider):
             urgency_level = UrgencyLevel.CRISIS.value
             urgency_score = 0.95
             urgency_reason = "Urgent crisis situation involving displacement, emergency shelter, or physical safety."
-            summary = "User experiencing an urgent displacement or disaster crisis requiring emergency shelter."
+            summary = "EMERGENCY ASSISTANCE: Your safety is the top priority. Please move to higher ground or a designated shelter immediately. Below are emergency relief steps and official disaster assistance resources."
         elif any(w in text_lower for w in ["grocery", "food", "ration", "eat", "feed", "pds"]):
             flow = FlowType.PUBLIC_SERVICE.value
             primary_intent = "FOOD_ASSISTANCE"
@@ -207,7 +207,7 @@ class MockLLMProvider(BaseLLMProvider):
             urgency_level = UrgencyLevel.NORMAL.value
             urgency_score = 0.30
             urgency_reason = "Standard public service informational inquiry."
-            summary = f"Public service navigation query regarding: '{user_message[:60]}...'"
+            summary = "Assistance request for public service scheme options."
 
         return {
             "flow": flow,

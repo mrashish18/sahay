@@ -214,13 +214,13 @@ class EligibilityEngine:
                 reasoning=f"Ineligible due to jurisdiction boundary: Scheme is restricted to {rules['state']}."
             )
 
-        if not rules:
+        if not rules or (len(rules) == 1 and "country" in rules):
             return EligibilityItem(
                 scheme_id=scheme_id,
                 status=EligibilityStatus.UNCERTAIN,
                 matching_criteria=[],
-                unmet_criteria=[],
-                reasoning="No structured eligibility rules defined for this scheme. Official verification required."
+                unmet_criteria=["Income & specific criteria: Not defined in trusted dataset."],
+                reasoning="Income eligibility criteria could not be verified from the current trusted dataset."
             )
 
         # Parse rule schema (dictionary or RuleGroup structure)
@@ -232,6 +232,7 @@ class EligibilityEngine:
         failed_count = 0
         missing_count = 0
         satisfied_count = 0
+        uncertain_count = 0
 
         for tr in traces:
             desc = f"{tr.criterion} (User: {tr.user_value})"
@@ -241,7 +242,10 @@ class EligibilityEngine:
             elif tr.status == CriterionStatus.NOT_SATISFIED:
                 failed_count += 1
                 unmet_criteria.append(f"{tr.criterion} - {tr.reason}")
-            elif tr.status in (CriterionStatus.MISSING, CriterionStatus.UNCERTAIN):
+            elif tr.status == CriterionStatus.UNCERTAIN:
+                uncertain_count += 1
+                unmet_criteria.append(f"{tr.criterion} - {tr.reason}")
+            elif tr.status == CriterionStatus.MISSING:
                 missing_count += 1
                 unmet_criteria.append(f"{tr.criterion} - {tr.reason}")
 
@@ -249,15 +253,19 @@ class EligibilityEngine:
         if failed_count > 0:
             status = EligibilityStatus.INELIGIBLE
             reasoning = f"Ineligible: {failed_count} mandatory criteria were not satisfied."
-        elif missing_count > 0 and satisfied_count > 0:
+        elif (missing_count > 0 or uncertain_count > 0) and satisfied_count > 0:
             status = EligibilityStatus.POTENTIALLY_ELIGIBLE
-            reasoning = f"Potentially Eligible: Satisfies {satisfied_count} criteria, but {missing_count} required details are missing or unconfirmed."
-        elif missing_count > 0 and satisfied_count == 0:
+            reasoning = f"Potentially Eligible: Satisfies {satisfied_count} criteria, but {missing_count + uncertain_count} required details require explicit user confirmation."
+        elif (missing_count > 0 or uncertain_count > 0) and satisfied_count == 0:
             status = EligibilityStatus.UNCERTAIN
-            reasoning = f"Uncertain: Required criteria details ({missing_count} fields) are missing from provided facts."
+            reasoning = f"Uncertain: Required criteria details ({missing_count + uncertain_count} fields) require explicit user confirmation."
         elif satisfied_count > 0:
-            status = EligibilityStatus.LIKELY_ELIGIBLE
-            reasoning = f"Likely Eligible: Satisfies all {satisfied_count} evaluated mandatory criteria based on provided information."
+            if user_facts.get("is_crisis_unverified") or user_facts.get("_inferred_crisis"):
+                status = EligibilityStatus.UNCERTAIN
+                reasoning = "Uncertain: Crisis situation requires explicit verification of displacement and property damage facts."
+            else:
+                status = EligibilityStatus.LIKELY_ELIGIBLE
+                reasoning = f"Likely Eligible: Satisfies all {satisfied_count} evaluated mandatory criteria based on provided information."
         else:
             status = EligibilityStatus.UNCERTAIN
             reasoning = "Uncertain: Insufficient data to evaluate eligibility criteria."

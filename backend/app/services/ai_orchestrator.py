@@ -4,7 +4,7 @@ from typing import List, Dict, Any, Optional
 from app.models.schemas import (
     SahayResponse, FlowType, UrgencyLevel, ChatRequest,
     RecommendationItem, DocumentItem, ActionStep, SourceItem,
-    EligibilityItem, Situation, Urgency
+    EligibilityItem, EligibilityStatus, Situation, Urgency
 )
 from app.services.conversation_router import conversation_router
 from app.services.web_search_service import web_search_service
@@ -35,7 +35,8 @@ class AIOrchestrator:
         flow, primary_intent, extracted_facts, urgency, sem_res = conversation_router.route(
             user_message=request.message,
             user_context=request.user_context,
-            conversation_history=session.messages[:-1]
+            conversation_history=session.messages[:-1],
+            session=session
         )
 
         country = extracted_facts.get("country") or (request.user_context or {}).get("country", "IN")
@@ -54,16 +55,38 @@ class AIOrchestrator:
         # -------------------------------------------------------------------
         if flow == FlowType.WEB_SEARCH_REQUIRED:
             query_to_search = sem_res.entities.get("search_rewrite") or sem_res.normalized_query or request.message
+            req_time_period = sem_res.entities.get("time_period")
             summary, web_sources, web_missing, weather_payload = web_search_service.process_web_or_weather_query(
                 query=query_to_search,
-                user_context=request.user_context
+                user_context=request.user_context,
+                time_period=req_time_period
             )
-            situation = Situation(summary=summary, extracted_facts=extracted_facts, primary_intent="WEB_SEARCH_REQUIRED", weather_data=weather_payload)
+            situation = Situation(summary=summary, extracted_facts=extracted_facts, primary_intent=primary_intent, weather_data=weather_payload)
             sources = web_sources
-            missing_info.extend(web_missing)
-            session.update_context(active_topic="weather", location=weather_payload.get("city") if weather_payload else None, tool_used="Open-Meteo Weather API")
+            if web_missing:
+                existing_fields = {m.field for m in missing_info}
+                for wm in web_missing:
+                    if wm.field not in existing_fields:
+                        missing_info.append(wm)
+                        existing_fields.add(wm.field)
 
-            return SahayResponse(
+            if weather_payload and weather_payload.get("city"):
+                session.update_context(
+                    active_topic="WEATHER",
+                    active_intent="WEATHER",
+                    active_domain="WEATHER",
+                    location=weather_payload.get("city"),
+                    time_period=sem_res.entities.get("time_period"),
+                    tool_used="Open-Meteo Weather API"
+                )
+            else:
+                session.update_context(
+                    active_topic=primary_intent,
+                    active_domain=sem_res.domain or "GENERAL",
+                    tool_used="Live Web Search"
+                )
+
+            resp = SahayResponse(
                 request_id=req_id,
                 timestamp=now_iso,
                 flow=flow,
@@ -78,6 +101,8 @@ class AIOrchestrator:
                 evidence=[],
                 disclaimer="Live web search result. Powered by Sahay AI Assistant."
             )
+            session.add_message("SAHAY", summary)
+            return resp
 
         # -------------------------------------------------------------------
         # ROUTE B: GENERAL_INFORMATION (Programming, Math, Definitions)
@@ -91,11 +116,9 @@ class AIOrchestrator:
             )
 
             situation = Situation(summary=summary, extracted_facts=extracted_facts, primary_intent="GENERAL_INFORMATION")
-            # Topic Reset: Clear weather location context when topic switches to General Information
-            session.active_topic = "GENERAL_INFORMATION"
-            session.active_location = None
+            session.reset_topic("GENERAL_INFORMATION", new_domain="GENERAL")
 
-            return SahayResponse(
+            resp = SahayResponse(
                 request_id=req_id,
                 timestamp=now_iso,
                 flow=flow,
@@ -110,6 +133,8 @@ class AIOrchestrator:
                 evidence=[],
                 disclaimer="General information provided by Sahay AI Assistant."
             )
+            session.add_message("SAHAY", summary)
+            return resp
 
         # -------------------------------------------------------------------
         # ROUTE C: AMBIGUOUS Intent (Clarification Required - ZERO Scheme Cards!)
@@ -127,9 +152,9 @@ class AIOrchestrator:
                 )
 
             situation = Situation(summary=summary, extracted_facts=extracted_facts, primary_intent=sem_res.primary_intent or "AMBIGUOUS")
-            session.active_topic = "AMBIGUOUS"
+            session.update_context(active_topic="AMBIGUOUS", active_domain="GENERAL")
 
-            return SahayResponse(
+            resp = SahayResponse(
                 request_id=req_id,
                 timestamp=now_iso,
                 flow=flow,
@@ -144,6 +169,8 @@ class AIOrchestrator:
                 evidence=[],
                 disclaimer="Clarification requested. Powered by Sahay AI Assistant."
             )
+            session.add_message("SAHAY", summary)
+            return resp
 
         # -------------------------------------------------------------------
         # ROUTE D: CRISIS Navigator Workflow
@@ -160,7 +187,8 @@ class AIOrchestrator:
                 message=request.message
             )
             
-            target_scheme_id = "SCH-IN-003" if (country == "IN" and state == "Bihar") else ("SCH-IN-001" if country == "IN" else "SCH-GOV-001")
+            situation.summary = "EMERGENCY ASSISTANCE: Your safety is the top priority. Please move to higher ground or a designated shelter immediately. Below are emergency relief steps and official disaster assistance resources."
+            target_scheme_id = "SCH-IN-003" if country == "IN" else "SCH-GOV-001"
             scheme_data = knowledge_base_service.get_scheme(target_scheme_id)
             
             if scheme_data:
@@ -182,12 +210,15 @@ class AIOrchestrator:
                     rules=scheme_data.get("eligibility_rules", {}),
                     user_facts=situation.extracted_facts
                 )
+                if el_res.status == EligibilityStatus.LIKELY_ELIGIBLE:
+                    el_res.status = EligibilityStatus.POTENTIALLY_ELIGIBLE
+                    el_res.reasoning = "Potentially Relevant: Disaster relief assistance may apply based on reported flood damage, but official district registration and verification remain required."
                 eligibility.append(el_res)
                 documents = knowledge_base_service.get_documents_for_scheme(target_scheme_id)
                 sources = crisis_eval.sources
 
             action_plan = crisis_eval.action_plan
-            session.update_context(active_topic="crisis", tool_used="Crisis Navigator")
+            session.reset_topic("CRISIS", new_domain="CRISIS")
 
         # -------------------------------------------------------------------
         # ROUTE E: PUBLIC_SERVICE, ELIGIBILITY_CHECK, DOCUMENT_GUIDANCE
@@ -209,21 +240,64 @@ class AIOrchestrator:
                 top_k=4
             )
 
-            # Search Knowledge Base Schemes with Intent Boosting
-            all_recs = knowledge_base_service.search_schemes(
-                query=request.message,
-                country=country,
-                state=state,
-                primary_intent=situation.primary_intent
-            )
+            # Target Scheme Determination & Context Lock (Section 1)
+            # HARD RULE: Explicit entity/scheme references in current query ("pmay", "ayushman", "scholarship")
+            # have HIGHER priority than pronoun references or previous active_scheme!
+            has_explicit_scheme = any(w in request.message.lower() for w in ["pmay", "housing", "awas", "ayushman", "health card", "pmjay", "ration", "kisan", "pm-kisan"])
+            has_pronoun_ref = any(w in request.message.lower() for w in ["it", "this", "that", "for it", "the scheme", "this scheme", "that scheme", "the ration", "uske liye", "iske liye", "isme", "usme"])
+            
+            if has_explicit_scheme and sem_res.entities.get("scheme"):
+                target_scheme_id = sem_res.entities.get("scheme")
+            elif has_pronoun_ref and getattr(session, "active_scheme", None):
+                target_scheme_id = session.active_scheme
+            else:
+                target_scheme_id = sem_res.entities.get("scheme") or getattr(session, "active_scheme", None)
+            
+            if not target_scheme_id and situation.primary_intent == "FOOD_ASSISTANCE":
+                target_scheme_id = "SCH-IN-014"
 
-            # MAX 3 RECOMMENDATIONS RULE (1 Primary + up to 2 Relevant Alternatives)
-            recommendations = all_recs[:3]
-
-            target_scheme_id = None
-            if recommendations:
-                target_scheme_id = recommendations[0].scheme_id
+            # STRICT SCHEME LOCK RULE:
+            # If flow is ELIGIBILITY_CHECK or target_scheme_id is locked from prior turn,
+            # return ONLY the referenced target scheme (Max recommendations = 1). NEVER run broad search.
+            if flow == FlowType.ELIGIBILITY_CHECK or has_pronoun_ref or any(w in request.message.lower() for w in ["eligible", "eligibility", "qualify"]):
+                target_scheme_id = target_scheme_id or "SCH-IN-014"
                 scheme_data = knowledge_base_service.get_scheme(target_scheme_id)
+                if scheme_data:
+                    recommendations = [
+                        RecommendationItem(
+                            scheme_id=scheme_data["id"],
+                            title=scheme_data["title"],
+                            issuing_authority=scheme_data["issuing_authority"],
+                            country=scheme_data.get("country", "IN"),
+                            jurisdiction_level=scheme_data.get("jurisdiction_level", "NATIONAL"),
+                            region=scheme_data.get("region"),
+                            category=scheme_data["category"],
+                            summary=scheme_data["summary"],
+                            match_confidence="HIGH"
+                        )
+                    ]
+                else:
+                    recommendations = []
+            else:
+                # General Search: Max 3 Recommendations (1 Primary + up to 2 Alternatives)
+                all_recs = knowledge_base_service.search_schemes(
+                    query=request.message,
+                    country=country,
+                    state=state,
+                    primary_intent=situation.primary_intent
+                )
+                recommendations = all_recs[:3]
+                if not target_scheme_id and recommendations:
+                    target_scheme_id = recommendations[0].scheme_id
+
+            if target_scheme_id:
+                scheme_data = knowledge_base_service.get_scheme(target_scheme_id)
+                session.update_context(
+                    active_topic=situation.primary_intent or "PUBLIC_SERVICE",
+                    active_intent=flow.value,
+                    active_domain="PUBLIC_SERVICE",
+                    active_scheme=target_scheme_id
+                )
                 
                 if scheme_data:
                     # Contextual Eligibility Card Rule: ONLY display if user explicitly asked or flow is ELIGIBILITY_CHECK
@@ -241,7 +315,7 @@ class AIOrchestrator:
 
                     # Contextual Document Checklist Card Rule: ONLY display if user explicitly asked or flow is DOCUMENT_GUIDANCE
                     is_doc_requested = (
-                        flow in [FlowType.DOCUMENT_GUIDANCE, FlowType.ELIGIBILITY_CHECK] or
+                        flow in [FlowType.DOCUMENT_GUIDANCE] or
                         any(w in request.message.lower() for w in ["document", "documents", "paperwork", "proof", "docs"])
                     )
                     if is_doc_requested:
@@ -251,29 +325,71 @@ class AIOrchestrator:
                     if source_item:
                         sources.append(source_item)
 
-            # Build Tailored Action Plan for matched scheme
-            if target_scheme_id == "SCH-IN-011":
-                action_plan = [
-                    ActionStep(step_number=1, title="Download & Complete e-District Self-Declaration Form", description="Download prescribed income/caste declaration form from State ServicePlus portal & attach photo.", estimated_time="20 mins"),
-                    ActionStep(step_number=2, title="Submit Online Application on State e-District Portal", description="Log into State ServicePlus portal (serviceonline.bihar.gov.in), upload Aadhaar & salary/land proof.", estimated_time="30 mins"),
-                    ActionStep(step_number=3, title="Revenue Officer Verification & Certificate Issue", description="Track application status; BDO/Circle Officer verifies record and issues digitally signed certificate.", estimated_time="7-14 business days")
-                ]
-            elif target_scheme_id == "SCH-IN-014":
-                action_plan = [
-                    ActionStep(step_number=1, title="Check Ration Card Entitlement at Fair Price Shop (FPS)", description="Visit local FPS with Ration Card or Aadhaar number for biometric e-POS verification.", estimated_time="15 mins"),
-                    ActionStep(step_number=2, title="Collect Monthly Free Ration & Grocery Allocation", description="Receive 5 kg free food grains (rice/wheat) per person per month under PMGKAY.", estimated_time="30 mins"),
-                    ActionStep(step_number=3, title="Apply for Ration Card Migration / One Nation One Ration Card", description="If relocated, register for ONORC portability at any local ration center.", estimated_time="1 day")
-                ]
+            # Conversational Response Hierarchy Formatter (Section 2 & 8)
+            if flow == FlowType.ELIGIBILITY_CHECK or any(w in request.message.lower() for w in ["eligible", "eligibility", "for it"]):
+                if target_scheme_id == "SCH-IN-014":
+                    situation.summary = (
+                        "I can help check your eligibility for NFSA food assistance.\n\n"
+                        "Income eligibility criteria could not be verified from the current trusted dataset.\n\n"
+                        "Do you currently hold an active Priority Household (PHH) or Antyodaya Anna Yojana (AAY) Ration Card?"
+                    )
+                else:
+                    situation.summary = (
+                        "I can help check whether you may qualify for this assistance.\n\n"
+                        "I need a couple of details to evaluate official requirements.\n\n"
+                        "What is your current location and household situation?"
+                    )
+            elif situation.primary_intent == "FOOD_ASSISTANCE" and not any(w in request.message.lower() for w in ["eligible", "document"]):
+                situation.summary = (
+                    "Yes — I can help with that.\n\n"
+                    "The most relevant program I found is NFSA/PMGKAY food assistance.\n\n"
+                    "If your family has an eligible ration card, you may be able to receive food-grain entitlements through your Fair Price Shop.\n\n"
+                    "Do you already have a ration card?"
+                )
+
+            # Action Plan reduction for simple queries
+            is_action_plan_requested = (
+                flow == FlowType.DOCUMENT_GUIDANCE or
+                any(w in request.message.lower() for w in ["how to apply", "where to apply", "procedure", "steps", "application process"])
+            )
+            if is_action_plan_requested and target_scheme_id:
+                if target_scheme_id == "SCH-IN-011":
+                    action_plan = [
+                        ActionStep(step_number=1, title="Download & Complete e-District Self-Declaration Form", description="Download prescribed income/caste declaration form from State ServicePlus portal & attach photo.", estimated_time="20 mins"),
+                        ActionStep(step_number=2, title="Submit Online Application on State e-District Portal", description="Log into State ServicePlus portal (serviceonline.bihar.gov.in), upload Aadhaar & salary/land proof.", estimated_time="30 mins"),
+                        ActionStep(step_number=3, title="Revenue Officer Verification & Certificate Issue", description="Track application status; BDO/Circle Officer verifies record and issues digitally signed certificate.", estimated_time="7-14 business days")
+                    ]
+                elif target_scheme_id == "SCH-IN-014":
+                    action_plan = [
+                        ActionStep(step_number=1, title="Check Ration Card Entitlement at Fair Price Shop (FPS)", description="Visit local FPS with Ration Card or Aadhaar number for biometric e-POS verification.", estimated_time="15 mins"),
+                        ActionStep(step_number=2, title="Collect Monthly Free Ration & Grocery Allocation", description="Receive 5 kg free food grains (rice/wheat) per person per month under PMGKAY.", estimated_time="30 mins"),
+                        ActionStep(step_number=3, title="Apply for Ration Card Migration / One Nation One Ration Card", description="If relocated, register for ONORC portability at any local ration center.", estimated_time="1 day")
+                    ]
+                else:
+                    action_plan = [
+                        ActionStep(step_number=1, title="Collect Required Supporting Documentation", description="Gather income slips, photo identification, and status certificates.", estimated_time="1-2 days"),
+                        ActionStep(step_number=2, title="Submit Application via Official Portal", description="Complete online benefit enrollment form on the official issuing authority portal.", estimated_time="45 mins"),
+                        ActionStep(step_number=3, title="Track Benefit Processing & Verification", description="Check application portal weekly using your confirmation tracking ID.", estimated_time="5-7 business days")
+                    ]
             else:
-                action_plan = [
-                    ActionStep(step_number=1, title="Collect Required Supporting Documentation", description="Gather income slips, photo identification, and separation/status certificates.", estimated_time="1-2 days"),
-                    ActionStep(step_number=2, title="Submit Application via Official Portal", description="Complete online benefit enrollment form on the official issuing authority portal.", estimated_time="45 mins"),
-                    ActionStep(step_number=3, title="Track Benefit Processing & Verification", description="Check application portal weekly using your confirmation tracking ID.", estimated_time="5-7 business days")
-                ]
+                action_plan = []
 
-            session.update_context(active_topic=situation.primary_intent, tool_used="Sahay RAG & Eligibility Engine")
+            session.update_context(active_topic=situation.primary_intent or "PUBLIC_SERVICE", tool_used="Sahay RAG & Eligibility Engine")
 
-        return SahayResponse(
+        # -------------------------------------------------------------------
+        # FINAL JURISDICTION PROTECTION GATE
+        # -------------------------------------------------------------------
+        if country == "IN":
+            recommendations = [r for r in recommendations if r.country == "IN"]
+            sources = [
+                s for s in sources
+                if not any(us_kw in (s.url or "").lower() or us_kw in (s.title or "").lower() or us_kw in (s.issuing_authority or "").lower()
+                           for us_kw in ["fema", "hhs.gov", "usa.gov", "snap", "us department", "us emergency"])
+            ]
+        elif country == "US":
+            recommendations = [r for r in recommendations if r.country == "US"]
+
+        resp = SahayResponse(
             request_id=req_id,
             timestamp=now_iso,
             flow=flow,
@@ -288,5 +404,7 @@ class AIOrchestrator:
             evidence=evidence,
             disclaimer="DISCLAIMER: Sahay is an independent public-service navigator and does not guarantee official legal eligibility. Please verify all requirements directly with the issuing government authority."
         )
+        session.add_message("SAHAY", situation.summary)
+        return resp
 
 ai_orchestrator = AIOrchestrator()

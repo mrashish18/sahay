@@ -140,7 +140,11 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                     <div className="p-5 rounded-2xl bg-[#121B2B] border border-sky-500/30 input-glow space-y-3 text-left">
                       <div className="flex items-center justify-between border-b border-slate-800 pb-2">
                         <span className="text-xs font-black text-sky-300 uppercase tracking-wider flex items-center gap-1.5">
-                          <CloudRain className="w-4 h-4 text-sky-400" /> Tomorrow · {weatherData.city}, {weatherData.admin_region}
+                          <CloudRain className="w-4 h-4 text-sky-400" />
+                          {weatherData.time_period
+                            ? `${weatherData.time_period.charAt(0).toUpperCase() + weatherData.time_period.slice(1)} Forecast`
+                            : 'Daily Forecast'}{' '}
+                          · {weatherData.city}, {weatherData.admin_region}
                         </span>
                         <span className="text-[10px] font-mono text-slate-400">
                           {weatherData.updated_at}
@@ -210,8 +214,8 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                     </div>
                   )}
 
-                  {/* Ambiguous Choice Chips */}
-                  {isSahay && isAmbiguous && (
+                  {/* Ambiguous Choice Chips (Only for Housing/Public Service Ambiguity) */}
+                  {isSahay && isAmbiguous && (resp?.situation?.primary_intent === 'HOUSING' || resp?.situation?.primary_intent === 'PUBLIC_SERVICE_AMBIGUOUS') && (
                     <div className="pt-2 text-left space-y-2">
                       <span className="text-xs font-bold text-slate-400 block">Select your specific requirement:</span>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">

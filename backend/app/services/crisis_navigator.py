@@ -105,38 +105,39 @@ class CrisisNavigator:
 
         return steps
 
-    def get_verified_emergency_resources(self, crisis_type: CrisisType, state: Optional[str]) -> List[CrisisResource]:
+    def get_verified_emergency_resources(self, crisis_type: CrisisType, state: Optional[str], country: Optional[str] = "IN") -> List[CrisisResource]:
         resources: List[CrisisResource] = []
-        jurisdiction = state or "National"
+        jurisdiction = f"{state}, India" if country == "IN" and state else ("India (National)" if country == "IN" else "United States")
 
-        # Search authentic dataset for emergency disaster programs
-        fema_scheme = knowledge_base_service.get_scheme("SCH-GOV-001")
-        if fema_scheme:
+        target_scheme_id = "SCH-IN-003" if (country == "IN" and (state == "Bihar" or crisis_type in (CrisisType.FLOOD, CrisisType.DISASTER, CrisisType.DISPLACEMENT))) else ("SCH-GOV-001" if country == "US" else "SCH-IN-001")
+        disaster_scheme = knowledge_base_service.get_scheme(target_scheme_id)
+        if disaster_scheme and disaster_scheme.get("country") == country:
             resources.append(CrisisResource(
-                name=fema_scheme["title"],
+                name=disaster_scheme["title"],
                 resource_type=ResourceType.SHELTER if crisis_type in (CrisisType.FLOOD, CrisisType.DISPLACEMENT) else ResourceType.EMERGENCY,
-                description=fema_scheme["summary"],
-                jurisdiction=fema_scheme["jurisdiction"],
+                description=disaster_scheme["summary"],
+                jurisdiction=disaster_scheme["jurisdiction"],
                 availability="24/7 Intake",
-                source_url=fema_scheme["source_url"],
-                issuing_authority=fema_scheme["issuing_authority"],
-                last_verified=fema_scheme.get("last_verified"),
+                source_url=disaster_scheme["source_url"],
+                issuing_authority=disaster_scheme["issuing_authority"],
+                last_verified=disaster_scheme.get("last_verified"),
                 verified=True
             ))
 
         # Check for food support if food crisis
         if crisis_type == CrisisType.FOOD_INSECURITY:
-            snap_scheme = knowledge_base_service.get_scheme("SCH-GOV-002")
-            if snap_scheme:
+            food_scheme_id = "SCH-IN-014" if country == "IN" else "SCH-GOV-002"
+            food_scheme = knowledge_base_service.get_scheme(food_scheme_id)
+            if food_scheme:
                 resources.append(CrisisResource(
-                    name=snap_scheme["title"],
+                    name=food_scheme["title"],
                     resource_type=ResourceType.FOOD,
-                    description=snap_scheme["summary"],
-                    jurisdiction=snap_scheme["jurisdiction"],
+                    description=food_scheme["summary"],
+                    jurisdiction=food_scheme["jurisdiction"],
                     availability="Business Hours Intake",
-                    source_url=snap_scheme["source_url"],
-                    issuing_authority=snap_scheme["issuing_authority"],
-                    last_verified=snap_scheme.get("last_verified"),
+                    source_url=food_scheme["source_url"],
+                    issuing_authority=food_scheme["issuing_authority"],
+                    last_verified=food_scheme.get("last_verified"),
                     verified=True
                 ))
 
@@ -148,8 +149,8 @@ class CrisisNavigator:
                 description="For immediate local emergency support, please contact your designated local municipal hotline or emergency dispatch center.",
                 jurisdiction=jurisdiction,
                 availability="24/7",
-                source_url="https://disastermanagement.gov.in",
-                issuing_authority="National Disaster Management Authority",
+                source_url="https://disastermanagement.gov.in" if country == "IN" else "https://www.fema.gov",
+                issuing_authority="National Disaster Management Authority" if country == "IN" else "FEMA",
                 last_verified="2026-01-15",
                 verified=True
             ))
@@ -167,7 +168,8 @@ class CrisisNavigator:
 
         # 2. Verified Crisis Resources
         state = facts.get("state")
-        resources = self.get_verified_emergency_resources(crisis_type, state)
+        country = facts.get("country", "IN")
+        resources = self.get_verified_emergency_resources(crisis_type, state, country)
 
         # 3. Action Plan Generation
         action_plan: List[ActionStep] = [

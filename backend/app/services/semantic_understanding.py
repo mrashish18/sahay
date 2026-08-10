@@ -58,7 +58,11 @@ class SemanticUnderstandingEngine:
         r"\b(disaster|emergency|shelter|homeless|evicted|eviction)\b",
         r"\b(fire|earthquake|landslide|cyclone|tsunami|storm)\b",
         r"\b(chest pain|heart attack|bleeding|unconscious|starving)\b",
-        r"nowhere to stay", r"house.*damaged", r"floodwater.*damaged", r"ghar.*flood", r"safety threat"
+        r"nowhere to stay", r"house.*damaged", r"floodwater.*damaged", r"ghar.*flood", r"safety threat",
+        r"\b(doob|dub|doobba|duba|dube)\b",
+        r"pani.*(doob|dub|bhar|aagaya|aa\s+gaya|main|me|gaya|gya)",
+        r"ghar.*(doob|dub|pani|paani|bhar|toot|flood)",
+        r"rehne\s+ki\s+jagah\s+nahi", r"paani\s+ghar"
     ]
 
     FOOD_PATTERNS = [
@@ -86,7 +90,8 @@ class SemanticUnderstandingEngine:
         self,
         user_message: str,
         conversation_history: Optional[List[Dict[str, str]]] = None,
-        user_context: Optional[Dict[str, Any]] = None
+        user_context: Optional[Dict[str, Any]] = None,
+        session: Optional[Any] = None
     ) -> SemanticQueryResult:
         user_context = user_context or {}
         conversation_history = conversation_history or []
@@ -103,6 +108,10 @@ class SemanticUnderstandingEngine:
             if any(w in text_lower for w in ["nowhere to stay", "evicted", "homeless", "need shelter"]):
                 extracted_facts["displacement"] = True
             urgency = Urgency(level=UrgencyLevel.CRISIS, score=0.98, reasoning="Urgent displacement or physical safety crisis.")
+            
+            if session:
+                session.reset_topic("CRISIS", new_domain="CRISIS")
+
             return SemanticQueryResult(
                 raw_query=text_raw,
                 normalized_query=norm_query,
@@ -118,7 +127,59 @@ class SemanticUnderstandingEngine:
             )
 
         # -------------------------------------------------------------------
-        # 2. FOLLOW-UP CONTEXT RESOLUTION (Multi-Turn Conversation Memory)
+        # 2. PENDING CLARIFICATION RESOLUTION & TOPIC CHANGE CHECK
+        # -------------------------------------------------------------------
+        is_explicit_topic_change = (
+            any(re.search(pat, text_lower) for pat in self.CRISIS_PATTERNS) or
+            any(re.search(pat, text_lower) for pat in self.FOOD_PATTERNS) or
+            any(re.search(pat, text_lower) for pat in self.WEATHER_PATTERNS) or
+            bool(re.search(r"\b(python|pythn|ration|pmay)\b", text_lower))
+        )
+
+        if session and session.pending_clarification:
+            if is_explicit_topic_change:
+                # User changed topic — clear stale pending clarification!
+                session.clear_pending()
+            else:
+                # Check if user input satisfies pending clarification
+                if session.pending_intent == "WEATHER" or session.pending_clarification in ["city", "weather_city", "weather_confirm"]:
+                    city = None
+                    for c in self.KNOWN_CITIES:
+                        if c in text_lower:
+                            city = c.capitalize()
+                            break
+                    if not city and len(text_lower.split()) <= 2 and not any(w in text_lower for w in ["what", "how", "why", "who", "when"]):
+                        city = text_raw.capitalize()
+
+                    if city:
+                        time_period = session.pending_entities.get("time_period") or session.time_period or "evening"
+                        session.clear_pending()
+                        session.update_context(
+                            active_topic="WEATHER",
+                            active_intent="WEATHER",
+                            active_domain="WEATHER",
+                            location=city,
+                            time_period=time_period,
+                            date_reference="tomorrow"
+                        )
+                        norm_query = f"What will the weather be like tomorrow {time_period} in {city}?"
+                        urgency = Urgency(level=UrgencyLevel.INFORMATIONAL, score=0.20, reasoning="Resolved pending weather location clarification.")
+                        return SemanticQueryResult(
+                            raw_query=text_raw,
+                            normalized_query=norm_query,
+                            flow=FlowType.WEB_SEARCH_REQUIRED,
+                            primary_intent="WEATHER",
+                            secondary_intents=[],
+                            confidence=0.98,
+                            entities={"location": city, "city": city, "time": "tomorrow", "time_period": time_period},
+                            urgency=urgency,
+                            missing_information=[],
+                            temporal_requirement="CURRENT",
+                            domain="WEATHER"
+                        )
+
+        # -------------------------------------------------------------------
+        # 3. EXPLICIT WEATHER INTENT & WEATHER FOLLOW-UPS
         # -------------------------------------------------------------------
         last_bot_msg = ""
         last_user_msg = ""
@@ -129,98 +190,88 @@ class SemanticUnderstandingEngine:
                 elif msg.get("sender") == "USER" and not last_user_msg:
                     last_user_msg = msg.get("text", "").lower()
 
-        has_active_weather_context = (
-            "weather" in last_bot_msg or "rain" in last_bot_msg or "forecast" in last_bot_msg or
-            "weather" in last_user_msg or "rain" in last_user_msg or "barish" in last_user_msg
-        )
+        active_topic = getattr(session, "active_topic", None)
+        active_location = getattr(session, "location", None)
+        active_scheme = getattr(session, "active_scheme", None)
 
-        # Context Case A: City Single-Word Follow-Up ("Patna", "Delhi") after Weather Query
-        if text_lower in self.KNOWN_CITIES or (len(text_lower.split()) <= 2 and any(c in text_lower for c in self.KNOWN_CITIES)):
-            if has_active_weather_context or "city" in last_bot_msg or "location" in last_bot_msg:
-                city = text_raw.capitalize()
-                norm_query = f"Will it rain tomorrow in {city}?"
-                urgency = Urgency(level=UrgencyLevel.INFORMATIONAL, score=0.20, reasoning="City follow-up for weather query.")
-                return SemanticQueryResult(
-                    raw_query=text_raw,
-                    normalized_query=norm_query,
-                    flow=FlowType.WEB_SEARCH_REQUIRED,
-                    primary_intent="WEATHER",
-                    secondary_intents=[],
-                    confidence=0.98,
-                    entities={"location": city, "time": "tomorrow", "city": city},
-                    urgency=urgency,
-                    missing_information=[],
-                    temporal_requirement="CURRENT",
-                    domain="WEATHER"
-                )
+        is_explicit_weather = any(re.search(pat, text_lower) for pat in self.WEATHER_PATTERNS)
 
-        # Context Case B: Time-Period Follow-Up ("what about evening?", "and at night?", "what about morning?")
-        if any(w in text_lower for w in ["evening", "night", "morning", "afternoon", "temperature", "pm", "am"]):
-            if has_active_weather_context:
-                city = user_context.get("city")
-                if not city:
-                    for c in self.KNOWN_CITIES:
-                        if c in last_user_msg or c in last_bot_msg:
-                            city = c.capitalize()
-                            break
-                city = city or "Patna"
-                
+        if is_explicit_weather:
+            explicit_city_in_msg = None
+            for c in self.KNOWN_CITIES:
+                if c in text_lower:
+                    explicit_city_in_msg = c.capitalize()
+                    break
+
+            city = explicit_city_in_msg
+            if not city and active_topic == "WEATHER" and active_location:
+                city = active_location
+
+            state = user_context.get("state", "Bihar")
+            time_period = None
+            if "night" in text_lower or "raat" in text_lower or "overnight" in text_lower:
+                time_period = "night"
+            elif "morning" in text_lower or "subah" in text_lower:
+                time_period = "morning"
+            elif "afternoon" in text_lower or "dopahar" in text_lower:
+                time_period = "afternoon"
+            elif "evening" in text_lower or "shaam" in text_lower:
                 time_period = "evening"
-                if "morning" in text_lower:
-                    time_period = "morning"
-                elif "afternoon" in text_lower:
-                    time_period = "afternoon"
-                elif "night" in text_lower:
-                    time_period = "night"
-                elif "evening" in text_lower:
-                    time_period = "evening"
 
-                norm_query = f"What will the weather be like tomorrow {time_period} in {city}?"
-                urgency = Urgency(level=UrgencyLevel.INFORMATIONAL, score=0.20, reasoning="Weather time-period follow-up query.")
-                return SemanticQueryResult(
-                    raw_query=text_raw,
-                    normalized_query=norm_query,
-                    flow=FlowType.WEB_SEARCH_REQUIRED,
-                    primary_intent="WEATHER",
-                    secondary_intents=[],
-                    confidence=0.98,
-                    entities={"location": city, "time": "tomorrow", "city": city, "time_period": time_period},
-                    urgency=urgency,
-                    missing_information=[],
-                    temporal_requirement="CURRENT",
-                    domain="WEATHER"
-                )
-            elif not any(re.search(pat, text_lower) for pat in self.WEATHER_PATTERNS) and not any(c in text_lower for c in self.KNOWN_CITIES) and not any(re.search(pat, text_lower) for pat in self.PUBLIC_SERVICE_PATTERNS):
-                # NO weather context exists! Classify as AMBIGUOUS (Never PUBLIC_SERVICE!)
-                urgency = Urgency(level=UrgencyLevel.NORMAL, score=0.20, reasoning="Generic follow-up without active domain context.")
-                clarification = "Sure — evening for what? If you mean the weather, tell me the city."
-                return SemanticQueryResult(
-                    raw_query=text_raw,
-                    normalized_query=clarification,
-                    flow=FlowType.AMBIGUOUS,
-                    primary_intent="AMBIGUOUS",
-                    secondary_intents=[],
-                    confidence=0.30,
-                    entities={},
-                    urgency=urgency,
-                    missing_information=[
-                        MissingInfoItem(
-                            field="followup_context",
-                            question=clarification,
-                            importance="high"
-                        )
-                    ],
-                    temporal_requirement="NONE",
-                    domain="GENERAL"
-                )
+            # TIME PERIOD INHERITANCE RULE (FAILURE 3 & 4):
+            # Inherit session.time_period ONLY if no new city is named and query is an elliptical continuation ("weather", "aur raat me")
+            if not time_period and not explicit_city_in_msg and text_lower.strip() in ["weather", "wether", "wheather", "aur raat me"]:
+                if active_topic == "WEATHER" and getattr(session, "time_period", None):
+                    time_period = session.time_period
 
-        # Context Case C: Location + Time Without Domain ("tomorrow + Patna + evening", "tomorrow patna evening")
+            if city:
+                period_str = f" {time_period}" if time_period else ""
+                norm_query = f"What will the weather be like tomorrow{period_str} in {city}?"
+                missing_info = []
+                if session:
+                    session.update_context(
+                        active_topic="WEATHER",
+                        active_intent="WEATHER",
+                        active_domain="WEATHER",
+                        location=city,
+                        time_period=time_period,
+                        date_reference="tomorrow"
+                    )
+            else:
+                period_label = f"tomorrow {time_period}'s" if time_period else "tomorrow's"
+                q_text = f"Which city in {state} should I check for {period_label} weather forecast?"
+                norm_query = f"Weather forecast for {state}"
+                missing_info = [
+                    MissingInfoItem(
+                        field="city",
+                        question=q_text,
+                        importance="high"
+                    )
+                ]
+                if session:
+                    session.set_pending(intent="WEATHER", clarification="city", entities={"time_period": time_period, "state": state})
+
+            urgency = Urgency(level=UrgencyLevel.INFORMATIONAL, score=0.20, reasoning="Weather forecast inquiry.")
+            return SemanticQueryResult(
+                raw_query=text_raw,
+                normalized_query=norm_query,
+                flow=FlowType.WEB_SEARCH_REQUIRED,
+                primary_intent="WEATHER",
+                secondary_intents=[],
+                confidence=0.97,
+                entities={"location": city or state, "city": city, "time": "tomorrow", "time_period": time_period},
+                urgency=urgency,
+                missing_information=missing_info,
+                temporal_requirement="CURRENT",
+                domain="WEATHER"
+            )
+
+        # Context Case C: Location + Time Without Domain when NO active weather session ("tomorrow + Patna + evening")
         has_city = any(c in text_lower for c in self.KNOWN_CITIES)
         has_time = any(w in text_lower for w in ["tomorrow", "today", "tonight", "kal"])
-        has_period = any(w in text_lower for w in ["evening", "morning", "afternoon", "night", "shaam"])
-        has_weather_kw = any(re.search(pat, text_lower) for pat in self.WEATHER_PATTERNS)
+        has_period = any(w in text_lower for w in ["evening", "morning", "afternoon", "night", "shaam", "raat", "subah", "dopahar"])
 
-        if has_city and (has_time or has_period) and not has_weather_kw:
+        if has_city and (has_time or has_period) and not is_explicit_weather and active_topic != "WEATHER":
             city_name = next(c.capitalize() for c in self.KNOWN_CITIES if c in text_lower)
             clarification = f"Are you asking about tomorrow evening's weather in {city_name}?"
             urgency = Urgency(level=UrgencyLevel.NORMAL, score=0.40, reasoning="Location and time specified without explicit weather intent.")
@@ -244,93 +295,328 @@ class SemanticUnderstandingEngine:
                 domain="WEATHER"
             )
 
-        # Context Case D: Field Selection for Current Internship/Scholarship Query ("AI", "Data Science")
-        if text_lower in ["ai", "data science", "software", "python", "machine learning", "cs", "computer science"]:
-            if "internship" in last_bot_msg or "internship" in last_user_msg or "scholrship" in last_user_msg or "scholarship" in last_bot_msg:
-                field = text_raw.upper() if len(text_raw) <= 3 else text_raw.title()
-                norm_query = f"Currently available {field} internships in India 2026"
-                urgency = Urgency(level=UrgencyLevel.INFORMATIONAL, score=0.30, reasoning="Field refinement for live internship search.")
+        # Weather Time-Period Follow-Up ("what about evening?", "and at night?", "what about morning?", "aur raat me")
+        if any(w in text_lower for w in ["evening", "night", "morning", "afternoon", "shaam", "raat", "subah", "dopahar", "overnight"]):
+            is_weather_topic = (
+                (active_topic == "WEATHER") or
+                any(c in text_lower for c in self.KNOWN_CITIES) or
+                ("weather" in last_bot_msg or "rain" in last_bot_msg or "forecast" in last_bot_msg)
+            )
+            
+            if is_weather_topic:
+                city = None
+                for c in self.KNOWN_CITIES:
+                    if c in text_lower:
+                        city = c.capitalize()
+                        break
+                if not city:
+                    city = active_location
+                if not city:
+                    for c in self.KNOWN_CITIES:
+                        if c in last_user_msg or c in last_bot_msg:
+                            city = c.capitalize()
+                            break
+                city = city or "Patna"
+
+                time_period = None
+                if "night" in text_lower or "raat" in text_lower or "overnight" in text_lower:
+                    time_period = "night"
+                elif "morning" in text_lower or "subah" in text_lower:
+                    time_period = "morning"
+                elif "afternoon" in text_lower or "dopahar" in text_lower:
+                    time_period = "afternoon"
+                elif "evening" in text_lower or "shaam" in text_lower:
+                    time_period = "evening"
+                else:
+                    time_period = getattr(session, "time_period", None) or "evening"
+
+                if session:
+                    session.update_context(
+                        active_topic="WEATHER",
+                        active_intent="WEATHER",
+                        active_domain="WEATHER",
+                        location=city,
+                        time_period=time_period,
+                        date_reference="tomorrow"
+                    )
+
+                norm_query = f"What will the weather be like tomorrow {time_period} in {city}?"
+                urgency = Urgency(level=UrgencyLevel.INFORMATIONAL, score=0.20, reasoning="Weather time-period follow-up query.")
                 return SemanticQueryResult(
                     raw_query=text_raw,
                     normalized_query=norm_query,
                     flow=FlowType.WEB_SEARCH_REQUIRED,
-                    primary_intent="WEB_SEARCH_REQUIRED",
+                    primary_intent="WEATHER",
                     secondary_intents=[],
-                    confidence=0.96,
-                    entities={"topic": "internships", "field": field},
+                    confidence=0.98,
+                    entities={"location": city, "city": city, "time": "tomorrow", "time_period": time_period},
                     urgency=urgency,
                     missing_information=[],
                     temporal_requirement="CURRENT",
+                    domain="WEATHER"
+                )
+            elif not any(re.search(pat, text_lower) for pat in self.WEATHER_PATTERNS) and not any(c in text_lower for c in self.KNOWN_CITIES) and not any(re.search(pat, text_lower) for pat in self.PUBLIC_SERVICE_PATTERNS):
+                # Ambiguous follow-up without active weather topic (e.g. after "what is Python?")
+                urgency = Urgency(level=UrgencyLevel.NORMAL, score=0.20, reasoning="Generic follow-up without active domain context.")
+                clarification = "Sure — evening for what? If you mean the weather, tell me the city."
+                if session:
+                    session.set_pending(intent="WEATHER", clarification="city", entities={"time_period": "evening"})
+
+                return SemanticQueryResult(
+                    raw_query=text_raw,
+                    normalized_query=clarification,
+                    flow=FlowType.AMBIGUOUS,
+                    primary_intent="AMBIGUOUS",
+                    secondary_intents=[],
+                    confidence=0.30,
+                    entities={},
+                    urgency=urgency,
+                    missing_information=[
+                        MissingInfoItem(
+                            field="followup_context",
+                            question=clarification,
+                            importance="high"
+                        )
+                    ],
+                    temporal_requirement="NONE",
                     domain="GENERAL"
                 )
 
-        # Context Case E: Assistance Type Follow-Up ("food", "grocery", "job")
-        if text_lower in ["food", "grocery", "rations", "ration", "unemployment", "job"]:
-            if "lost my job" in last_user_msg or "unemployed" in last_user_msg or "assistance" in last_bot_msg:
-                norm_query = f"I need {text_lower} assistance for my situation."
-                urgency = Urgency(level=UrgencyLevel.HIGH, score=0.75, reasoning="Follow-up request for food/grocery support.")
+        # Single-Word City Follow-Up ("Patna", "Delhi") after weather query or clarification
+        if text_lower in self.KNOWN_CITIES or (len(text_lower.split()) <= 2 and any(c in text_lower for c in self.KNOWN_CITIES)):
+            is_weather_context = (active_topic == "WEATHER") or ("weather" in last_bot_msg or "rain" in last_bot_msg or "city" in last_bot_msg)
+            if is_weather_context:
+                city = text_raw.capitalize()
+                time_period = getattr(session, "time_period", None) or "evening"
+                if session:
+                    session.clear_pending()
+                    session.update_context(
+                        active_topic="WEATHER",
+                        active_intent="WEATHER",
+                        active_domain="WEATHER",
+                        location=city,
+                        time_period=time_period,
+                        date_reference="tomorrow"
+                    )
+                norm_query = f"What will the weather be like tomorrow {time_period} in {city}?"
+                urgency = Urgency(level=UrgencyLevel.INFORMATIONAL, score=0.20, reasoning="City follow-up for weather query.")
                 return SemanticQueryResult(
                     raw_query=text_raw,
                     normalized_query=norm_query,
-                    flow=FlowType.PUBLIC_SERVICE,
-                    primary_intent="FOOD_ASSISTANCE" if text_lower in ["food", "grocery", "rations", "ration"] else "UNEMPLOYMENT_SUPPORT",
-                    secondary_intents=["UNEMPLOYMENT_SUPPORT"],
-                    confidence=0.95,
-                    entities={"need": text_lower},
+                    flow=FlowType.WEB_SEARCH_REQUIRED,
+                    primary_intent="WEATHER",
+                    secondary_intents=[],
+                    confidence=0.98,
+                    entities={"location": city, "time": "tomorrow", "city": city, "time_period": time_period},
                     urgency=urgency,
                     missing_information=[],
-                    temporal_requirement="NONE",
-                    domain="PUBLIC_SERVICE"
+                    temporal_requirement="CURRENT",
+                    domain="WEATHER"
                 )
 
-        # -------------------------------------------------------------------
-        # 3. WEATHER INTENT (Open-Meteo Integration)
-        # -------------------------------------------------------------------
-        if any(re.search(pat, text_lower) for pat in self.WEATHER_PATTERNS):
-            city = None
-            for c in self.KNOWN_CITIES:
-                if c in text_lower:
-                    city = c.capitalize()
-                    break
+        # Pronoun / Reference / Explicit Scheme Follow-Up ("am i eligible for it?", "pmay milega mujhe", "ayushman milega?")
+        has_elig_kw = any(w in text_lower for w in ["eligible", "eligibility", "qualify", "can i get", "milega", "milegi"])
+        has_explicit_pmay = "pmay" in text_lower or "housing" in text_lower or "awas" in text_lower
+        has_explicit_ayushman = "ayushman" in text_lower or "health card" in text_lower or "pmjay" in text_lower
+        has_explicit_ration = "ration" in text_lower or "food" in text_lower or "nfsa" in text_lower
+        has_explicit_kisan = "kisan" in text_lower or "pm-kisan" in text_lower
 
-            state = user_context.get("state", "Bihar")
-            time_period = "evening" if "evening" in text_lower or "shaam" in text_lower else ("morning" if "morning" in text_lower else ("night" if "night" in text_lower else None))
-            
-            if city:
-                norm_query = f"Will it rain tomorrow in {city}?" if not time_period else f"What will the weather be like tomorrow {time_period} in {city}?"
-                missing_info = []
+        if has_elig_kw or has_explicit_pmay or has_explicit_ayushman or has_explicit_kisan or (has_explicit_ration and has_elig_kw):
+            if has_explicit_pmay:
+                resolved_scheme = "PMAY"
+                scheme_id = "SCH-IN-001"
+            elif has_explicit_ayushman:
+                resolved_scheme = "Ayushman Bharat"
+                scheme_id = "SCH-IN-006"
+            elif has_explicit_kisan:
+                resolved_scheme = "PM-KISAN"
+                scheme_id = "SCH-IN-002"
+            elif has_explicit_ration:
+                resolved_scheme = "NFSA"
+                scheme_id = "SCH-IN-014"
             else:
-                norm_query = f"Will it rain tomorrow in {state}?"
-                missing_info = [
-                    MissingInfoItem(
-                        field="city",
-                        question=f"Which city in {state} should I check for tomorrow's weather forecast?",
-                        importance="high"
-                    )
-                ]
+                ref_target = session.resolve_reference(text_raw) if session else None
+                target_scheme = ref_target or active_scheme or ("NFSA" if active_topic == "FOOD_ASSISTANCE" else None)
+                if target_scheme == "SCH-IN-006":
+                    resolved_scheme, scheme_id = "Ayushman Bharat", "SCH-IN-006"
+                elif target_scheme == "SCH-IN-001":
+                    resolved_scheme, scheme_id = "PMAY", "SCH-IN-001"
+                elif target_scheme == "SCH-IN-002":
+                    resolved_scheme, scheme_id = "PM-KISAN", "SCH-IN-002"
+                elif target_scheme in ["NFSA", "SCH-IN-014", "FOOD_ASSISTANCE", "ration"]:
+                    resolved_scheme, scheme_id = "NFSA", "SCH-IN-014"
+                else:
+                    resolved_scheme = target_scheme or "NFSA"
+                    scheme_id = "SCH-IN-014"
 
-            urgency = Urgency(level=UrgencyLevel.INFORMATIONAL, score=0.20, reasoning="Weather forecast inquiry.")
+            if session:
+                session.clear_pending()
+                session.update_context(
+                    active_topic=resolved_scheme,
+                    active_intent="ELIGIBILITY_CHECK",
+                    active_domain="PUBLIC_SERVICE",
+                    active_scheme=scheme_id
+                )
+            norm_query = f"Am I eligible for {resolved_scheme} scheme?"
+            urgency = Urgency(level=UrgencyLevel.NORMAL, score=0.40, reasoning="Resolved scheme eligibility check.")
+            return SemanticQueryResult(
+                raw_query=text_raw,
+                normalized_query=norm_query,
+                flow=FlowType.ELIGIBILITY_CHECK,
+                primary_intent="ELIGIBILITY_CHECK",
+                secondary_intents=[],
+                confidence=0.96,
+                entities={"scheme": scheme_id, "scheme_name": resolved_scheme},
+                urgency=urgency,
+                missing_information=[],
+                temporal_requirement="NONE",
+                domain="PUBLIC_SERVICE"
+            )
+
+        # -------------------------------------------------------------------
+        # 4. CURRENT-INFORMATION & LIVE REQUESTS (Scholarships, Internships, Jobs)
+        # -------------------------------------------------------------------
+        is_live_request = (
+            any(w in text_lower for w in ["ongoing", "abhi", "open hai", "open h", "available now", "open now", "latest", "current", "recent", "2026", "right now", "mil raha hai", "kaha milengi", "kaha milegi"]) or
+            ("which" in text_lower and ("open" in text_lower or "available" in text_lower)) or
+            ("where" in text_lower and ("find" in text_lower or "get" in text_lower) and ("internship" in text_lower or "scholarship" in text_lower))
+        )
+
+        if is_live_request:
+            if any(w in text_lower for w in ["scholrship", "scholarship", "scholarshp"]):
+                topic = "scholarships"
+                norm_query = "Which scholarships are currently open?"
+                rewrite_search = "currently open scholarships India 2026"
+                domain = "PUBLIC_SERVICE"
+            elif any(w in text_lower for w in ["intership", "internship", "internhsip", "intenship"]):
+                topic = "internships"
+                norm_query = "Where can I find currently available internships?"
+                rewrite_search = "currently available internships India 2026"
+                domain = "GENERAL"
+            elif "pmay" in text_lower:
+                topic = "PMAY"
+                norm_query = "What are the current PMAY rules and guidelines?"
+                rewrite_search = "current PMAY rules government India 2026"
+                domain = "PUBLIC_SERVICE"
+            elif "python" in text_lower:
+                topic = "python"
+                norm_query = "What is the latest Python version?"
+                rewrite_search = "latest Python release version 2026"
+                domain = "GENERAL"
+            elif "job" in text_lower or "jobs" in text_lower:
+                topic = "government jobs"
+                norm_query = "Which government jobs are currently open?"
+                rewrite_search = "latest government job openings India 2026"
+                domain = "PUBLIC_SERVICE"
+            else:
+                topic = text_raw
+                norm_query = f"Latest current information for: {text_raw}"
+                rewrite_search = f"latest {text_raw} 2026"
+                domain = "GENERAL"
+
+            if session:
+                session.reset_topic("WEB_SEARCH_REQUIRED", new_domain=domain)
+
+            urgency = Urgency(level=UrgencyLevel.INFORMATIONAL, score=0.30, reasoning="Current live information inquiry.")
             return SemanticQueryResult(
                 raw_query=text_raw,
                 normalized_query=norm_query,
                 flow=FlowType.WEB_SEARCH_REQUIRED,
-                primary_intent="WEATHER",
+                primary_intent="WEB_SEARCH_REQUIRED",
                 secondary_intents=[],
-                confidence=0.97,
-                entities={"location": city or state, "city": city, "time": "tomorrow", "time_period": time_period},
+                confidence=0.96,
+                entities={"topic": topic, "search_rewrite": rewrite_search},
                 urgency=urgency,
-                missing_information=missing_info,
+                missing_information=[],
                 temporal_requirement="CURRENT",
-                domain="WEATHER"
+                domain=domain
             )
 
         # -------------------------------------------------------------------
-        # 4. PUBLIC SERVICE / ELIGIBILITY / DOCUMENT / SCHEME INTENTS
+        # 5. GENERAL INFORMATION (Concepts, Definitions, Programming, Math)
         # -------------------------------------------------------------------
+        is_concept_def = (
+            text_lower.startswith("what is ") or
+            text_lower.startswith("explain ") or
+            text_lower.startswith("how does ") or
+            text_lower.startswith("what does ") or
+            "how do " in text_lower or
+            "meaning of " in text_lower or
+            bool(re.search(r"\b(python|pythn)\b", text_lower))
+        )
 
-        # A. Explicit Deterministic Eligibility Inquiry ("Am I eligible for ration?", "pmay milega kya", "qualify for")
+        if is_concept_def or bool(re.search(r"\b(python|pythn|api|machine learning|open source)\b", text_lower)):
+            if "python" in text_lower or "pythn" in text_lower:
+                norm_query = "What is Python?"
+            elif "api" in text_lower:
+                norm_query = "What is an API (Application Programming Interface) and how does it work?"
+            elif "open source" in text_lower:
+                norm_query = "What does open source mean?"
+            elif "internship" in text_lower or "intership" in text_lower:
+                norm_query = "What is an internship and how does internship availability work?"
+            else:
+                norm_query = text_raw.capitalize()
+
+            if session:
+                session.reset_topic("GENERAL_INFORMATION", new_domain="GENERAL")
+
+            urgency = Urgency(level=UrgencyLevel.INFORMATIONAL, score=0.10, reasoning="General knowledge educational query.")
+            return SemanticQueryResult(
+                raw_query=text_raw,
+                normalized_query=norm_query,
+                flow=FlowType.GENERAL_INFORMATION,
+                primary_intent="GENERAL_INFORMATION",
+                secondary_intents=[],
+                confidence=0.98,
+                entities={"topic": norm_query},
+                urgency=urgency,
+                missing_information=[],
+                temporal_requirement="NONE",
+                domain="GENERAL"
+            )
+
+        # -------------------------------------------------------------------
+        # 6. PUBLIC SERVICE / FOOD ASSISTANCE / ELIGIBILITY / DOCUMENT INTENTS
+        # -------------------------------------------------------------------
+        # Food / Ration Assistance
+        if any(re.search(pat, text_lower) for pat in self.FOOD_PATTERNS) or "ration" in text_lower or ("food" in text_lower and "kids" in text_lower):
+            country_code = "US" if any(w in text_lower for w in ["in the us", "in us", "in usa", "united states"]) else user_context.get("country", "IN")
+            scheme_id = "SCH-GOV-002" if country_code == "US" else "SCH-IN-014"
+
+            if session:
+                session.reset_topic("FOOD_ASSISTANCE", new_domain="PUBLIC_SERVICE")
+                session.update_context(active_scheme=scheme_id, country=country_code)
+
+            urgency = Urgency(level=UrgencyLevel.HIGH, score=0.75, reasoning="Public service food and ration support query.")
+            return SemanticQueryResult(
+                raw_query=text_raw,
+                normalized_query="I need food assistance and grocery support for my family.",
+                flow=FlowType.PUBLIC_SERVICE,
+                primary_intent="FOOD_ASSISTANCE",
+                secondary_intents=["UNEMPLOYMENT_SUPPORT"],
+                confidence=0.95,
+                entities={"country": country_code, "state": user_context.get("state") if country_code == "IN" else None, "scheme": scheme_id},
+                urgency=urgency,
+                missing_information=[],
+                temporal_requirement="NONE",
+                domain="PUBLIC_SERVICE"
+            )
+
+        # Deterministic Eligibility Inquiry
         if any(re.search(pat, text_lower) for pat in self.ELIGIBILITY_PATTERNS) and not any(w in text_lower for w in ["internship", "intership", "scholarship", "scholrship", "python", "version"]):
+            country_code = "US" if any(w in text_lower for w in ["in the us", "in us", "in usa", "united states"]) else user_context.get("country", "IN")
+            
+            # Check for pronoun reference to session.active_scheme ("it", "this", "that", "for it")
+            ref_scheme = None
+            if session and getattr(session, "active_scheme", None) and any(w in text_lower for w in ["it", "this", "that", "the scheme", "this scheme", "that scheme", "for it", "the ration"]):
+                ref_scheme = session.active_scheme
+
             scheme_name = "PMAY" if "pmay" in text_lower else ("Ration Card" if "ration" in text_lower else "public welfare programs")
+            scheme_id = ref_scheme or ("SCH-GOV-001" if country_code == "US" else ("SCH-IN-014" if "ration" in text_lower or "food" in text_lower or "job" in text_lower else "SCH-IN-001"))
+            if session:
+                session.reset_topic("ELIGIBILITY_CHECK", new_domain="PUBLIC_SERVICE")
+                session.update_context(active_scheme=scheme_id, country=country_code)
+
             norm_query = f"Am I eligible for {scheme_name}?"
             urgency = Urgency(level=UrgencyLevel.NORMAL, score=0.40, reasoning="Eligibility criteria evaluation query.")
             return SemanticQueryResult(
@@ -340,33 +626,19 @@ class SemanticUnderstandingEngine:
                 primary_intent="ELIGIBILITY_CHECK",
                 secondary_intents=[],
                 confidence=0.95,
-                entities={"scheme": scheme_name},
+                entities={"scheme": scheme_id, "scheme_name": scheme_name},
                 urgency=urgency,
                 missing_information=[],
                 temporal_requirement="NONE",
                 domain="PUBLIC_SERVICE"
             )
 
-        # B. Public Service Food / Ration ("ration kaise milega", "ration kaha milega")
-        if any(re.search(pat, text_lower) for pat in self.FOOD_PATTERNS) or "ration" in text_lower or ("food" in text_lower and "kids" in text_lower):
-            urgency = Urgency(level=UrgencyLevel.HIGH, score=0.75, reasoning="Public service food and ration support query.")
-            return SemanticQueryResult(
-                raw_query=text_raw,
-                normalized_query="I need food assistance and grocery support for my family.",
-                flow=FlowType.PUBLIC_SERVICE,
-                primary_intent="FOOD_ASSISTANCE",
-                secondary_intents=["UNEMPLOYMENT_SUPPORT"],
-                confidence=0.95,
-                entities={"country": user_context.get("country", "IN"), "state": user_context.get("state")},
-                urgency=urgency,
-                missing_information=[],
-                temporal_requirement="NONE",
-                domain="PUBLIC_SERVICE"
-            )
-
-        # C. Document Guidance
+        # Document Guidance
         if any(re.search(pat, text_lower) for pat in self.DOCUMENT_PATTERNS):
             scheme_name = "PMAY" if "pmay" in text_lower else "public welfare programs"
+            if session:
+                session.reset_topic("DOCUMENT_GUIDANCE", new_domain="PUBLIC_SERVICE")
+
             norm_query = f"What documents are required for {scheme_name}?"
             urgency = Urgency(level=UrgencyLevel.NORMAL, score=0.35, reasoning="Document requirements query.")
             return SemanticQueryResult(
@@ -383,8 +655,11 @@ class SemanticUnderstandingEngine:
                 domain="PUBLIC_SERVICE"
             )
 
-        # D. General Public Service / Scheme / Government Assistance
+        # General Public Service
         if any(re.search(pat, text_lower) for pat in self.PUBLIC_SERVICE_PATTERNS):
+            if session:
+                session.reset_topic("PUBLIC_SERVICE", new_domain="PUBLIC_SERVICE")
+
             missing_info = []
             if "state" not in user_context and "location" not in user_context:
                 missing_info.append(
@@ -410,107 +685,14 @@ class SemanticUnderstandingEngine:
             )
 
         # -------------------------------------------------------------------
-        # 5. CONTEXTUAL CURRENT-INFORMATION VS. GENERAL INFORMATION DISCOVERY
-        # -------------------------------------------------------------------
-        
-        # Definitional / Conceptual Questions (GENERAL_INFORMATION)
-        is_concept_def = (
-            text_lower.startswith("what is ") or
-            text_lower.startswith("explain ") or
-            text_lower.startswith("how does ") or
-            text_lower.startswith("what does ") or
-            "how do " in text_lower or
-            "meaning of " in text_lower
-        )
-        
-        # Check if query specifically asks for CURRENT/LIVE listings or recent time-sensitive data
-        is_live_request = (
-            any(w in text_lower for w in ["ongoing", "abhi", "open hai", "open h", "available now", "open now", "latest", "current", "recent", "2026", "right now", "mil raha hai", "kaha milengi", "kaha milegi"]) or
-            ("which" in text_lower and ("open" in text_lower or "available" in text_lower)) or
-            ("where" in text_lower and ("find" in text_lower or "get" in text_lower) and ("internship" in text_lower or "scholarship" in text_lower))
-        )
-
-        if is_live_request and not ("what is an open internship" in text_lower or "how does internship availability work" in text_lower or "what does open source" in text_lower):
-            if any(w in text_lower for w in ["intership", "internship", "internhsip", "intenship"]):
-                topic = "internships"
-                norm_query = "Where can I find currently available internships?"
-                rewrite_search = "currently available internships India 2026"
-                domain = "GENERAL"
-            elif any(w in text_lower for w in ["scholrship", "scholarship", "scholarshp"]):
-                topic = "scholarships"
-                norm_query = "Which scholarships are currently open?"
-                rewrite_search = "currently open scholarships India 2026"
-                domain = "PUBLIC_SERVICE"
-            elif "pmay" in text_lower:
-                topic = "PMAY"
-                norm_query = "What are the current PMAY rules and guidelines?"
-                rewrite_search = "current PMAY rules government India 2026"
-                domain = "PUBLIC_SERVICE"
-            elif "python" in text_lower:
-                topic = "python"
-                norm_query = "What is the latest Python version?"
-                rewrite_search = "latest Python release version 2026"
-                domain = "GENERAL"
-            elif "job" in text_lower or "jobs" in text_lower:
-                topic = "government jobs"
-                norm_query = "Which government jobs are currently open?"
-                rewrite_search = "latest government job openings India 2026"
-                domain = "PUBLIC_SERVICE"
-            else:
-                topic = text_raw
-                norm_query = f"Latest current information for: {text_raw}"
-                rewrite_search = f"latest {text_raw} 2026"
-                domain = "GENERAL"
-
-            urgency = Urgency(level=UrgencyLevel.INFORMATIONAL, score=0.30, reasoning="Current live information inquiry.")
-            return SemanticQueryResult(
-                raw_query=text_raw,
-                normalized_query=norm_query,
-                flow=FlowType.WEB_SEARCH_REQUIRED,
-                primary_intent="WEB_SEARCH_REQUIRED",
-                secondary_intents=[],
-                confidence=0.96,
-                entities={"topic": topic, "search_rewrite": rewrite_search},
-                urgency=urgency,
-                missing_information=[],
-                temporal_requirement="CURRENT",
-                domain=domain
-            )
-
-        # Standard General Information (Concepts, Definitions, Explanations)
-        if is_concept_def or any(w in text_lower for w in ["python", "pythn", "ai", "api", "machine learning", "open source"]):
-            if "python" in text_lower or "pythn" in text_lower:
-                norm_query = "What is Python?"
-            elif "api" in text_lower:
-                norm_query = "What is an API (Application Programming Interface) and how does it work?"
-            elif "open source" in text_lower:
-                norm_query = "What does open source mean?"
-            elif "internship" in text_lower or "intership" in text_lower:
-                norm_query = "What is an internship and how does internship availability work?"
-            else:
-                norm_query = text_raw.capitalize()
-
-            urgency = Urgency(level=UrgencyLevel.INFORMATIONAL, score=0.10, reasoning="General knowledge educational query.")
-            return SemanticQueryResult(
-                raw_query=text_raw,
-                normalized_query=norm_query,
-                flow=FlowType.GENERAL_INFORMATION,
-                primary_intent="GENERAL_INFORMATION",
-                secondary_intents=[],
-                confidence=0.98,
-                entities={"topic": norm_query},
-                urgency=urgency,
-                missing_information=[],
-                temporal_requirement="NONE",
-                domain="GENERAL"
-            )
-
-        # -------------------------------------------------------------------
-        # 6. UNRECOGNIZED / AMBIGUOUS QUERY FALLBACK PROTECTION (Never PUBLIC_SERVICE!)
+        # 7. UNRECOGNIZED / AMBIGUOUS QUERY FALLBACK PROTECTION (Never PUBLIC_SERVICE!)
         # -------------------------------------------------------------------
         urgency = Urgency(level=UrgencyLevel.NORMAL, score=0.30, reasoning="Unrecognized or ambiguous query requiring user clarification.")
         clarification = f"Sure — what details would you like to know about '{text_raw}'?"
-        
+        if session:
+            session.reset_topic("AMBIGUOUS", new_domain="GENERAL")
+            session.set_pending(intent="AMBIGUOUS", clarification="query_clarification")
+
         return SemanticQueryResult(
             raw_query=text_raw,
             normalized_query=clarification,
@@ -530,5 +712,6 @@ class SemanticUnderstandingEngine:
             temporal_requirement="NONE",
             domain="GENERAL"
         )
+
 
 semantic_engine = SemanticUnderstandingEngine()

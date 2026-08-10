@@ -1,11 +1,15 @@
 import pytest
 from app.services.ai_orchestrator import ai_orchestrator
+from app.services.conversation_memory import conversation_memory
 from app.models.schemas import ChatRequest, FlowType
 
 def test_query_a_weather_patna_open_meteo():
     """TEST A: 'Will it rain tomorrow in Patna?' -> WEB_SEARCH_REQUIRED, Real Open-Meteo data, 0 government schemes."""
+    cid = "test-a-patna"
+    conversation_memory.clear_session(cid)
     req = ChatRequest(
         message="Will it rain tomorrow in Patna?",
+        conversation_id=cid,
         user_context={"country": "IN", "state": "Bihar"}
     )
     res = ai_orchestrator.process_request(req)
@@ -21,8 +25,11 @@ def test_query_a_weather_patna_open_meteo():
 
 def test_query_b_weather_no_city():
     """TEST B: 'Will it rain tomorrow?' without city -> Ask for city in Bihar."""
+    cid = "test-b-no-city"
+    conversation_memory.clear_session(cid)
     req = ChatRequest(
         message="Will it rain tomorrow?",
+        conversation_id=cid,
         user_context={"country": "IN", "state": "Bihar"}
     )
     res = ai_orchestrator.process_request(req)
@@ -34,8 +41,11 @@ def test_query_b_weather_no_city():
 
 def test_query_c_what_is_python():
     """TEST C: 'What is Python?' -> GENERAL_INFORMATION, 0 government schemes, natural AI response."""
+    cid = "test-c-python"
+    conversation_memory.clear_session(cid)
     req = ChatRequest(
         message="What is Python?",
+        conversation_id=cid,
         user_context={"country": "IN", "state": "Bihar"}
     )
     res = ai_orchestrator.process_request(req)
@@ -45,8 +55,11 @@ def test_query_c_what_is_python():
 
 def test_query_d_food_grocery_support():
     """TEST D: 'I lost my job and need grocery support for my children.' -> PUBLIC_SERVICE, NFSA ranked #1."""
+    cid = "test-d-grocery"
+    conversation_memory.clear_session(cid)
     req = ChatRequest(
         message="I lost my job and need grocery support for my children.",
+        conversation_id=cid,
         user_context={"country": "IN", "state": "Bihar"}
     )
     res = ai_orchestrator.process_request(req)
@@ -58,8 +71,11 @@ def test_query_d_food_grocery_support():
 
 def test_query_e_crisis_flooding():
     """TEST E: 'My house was damaged by flooding and we have nowhere to stay.' -> CRISIS, safety first."""
+    cid = "test-e-flood"
+    conversation_memory.clear_session(cid)
     req = ChatRequest(
         message="My house was damaged by flooding and we have nowhere to stay.",
+        conversation_id=cid,
         user_context={"country": "IN", "state": "Bihar"}
     )
     res = ai_orchestrator.process_request(req)
@@ -70,8 +86,11 @@ def test_query_e_crisis_flooding():
 
 def test_query_f_eligibility_pmay():
     """TEST F: 'Am I eligible for PMAY?' -> ELIGIBILITY_CHECK."""
+    cid = "test-f-pmay"
+    conversation_memory.clear_session(cid)
     req = ChatRequest(
         message="Am I eligible for PMAY?",
+        conversation_id=cid,
         user_context={"country": "IN", "state": "Bihar"}
     )
     res = ai_orchestrator.process_request(req)

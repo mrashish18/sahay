@@ -569,9 +569,7 @@
     "summary": "Monthly free and highly subsidized food grains (wheat, rice, pulses) and essential grocery support for low-income and vulnerable families across India.",
     "description": "Provides 5 kg free food grains per month per person under PM-GKAY to Priority Household (PHH) and Antyodaya Anna Yojana (AAY) ration cardholders across all states in India.",
     "eligibility_rules": {
-      "country": "IN",
-      "household_income": 150000,
-      "household_income_period": "annual"
+      "country": "IN"
     },
     "document_requirements": [
       {

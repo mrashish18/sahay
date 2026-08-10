@@ -2,7 +2,11 @@ import { SahayResponse, ToolDefinition, TTEProposal } from '../types';
 
 const API_BASE = '/api/v1';
 
-export async function sendChatQuery(message: string, context: Record<string, any> = {}): Promise<SahayResponse> {
+export async function sendChatQuery(
+  message: string,
+  context: Record<string, any> = {},
+  conversationId?: string
+): Promise<SahayResponse> {
   try {
     const response = await fetch(`${API_BASE}/chat`, {
       method: 'POST',
@@ -12,6 +16,7 @@ export async function sendChatQuery(message: string, context: Record<string, any
       body: JSON.stringify({
         message,
         user_context: context,
+        conversation_id: conversationId,
       }),
     });
 

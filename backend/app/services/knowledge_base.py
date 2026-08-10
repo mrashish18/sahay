@@ -90,13 +90,21 @@ class KnowledgeBaseService:
                 for tid in target_ids:
                     matched_target_ids.add(tid)
 
-        # Primary intent priority boosting
-        if primary_intent == "FOOD_ASSISTANCE":
-            primary_boost_ids.update(["SCH-IN-014", "SCH-IN-004", "SCH-GOV-002"])
-        elif primary_intent == "UNEMPLOYMENT_SUPPORT":
-            primary_boost_ids.update(["SCH-IN-007", "SCH-GOV-003"])
-        elif primary_intent == "HOUSING_ASSISTANCE":
-            primary_boost_ids.update(["SCH-IN-001", "SCH-GOV-001"])
+        # Primary intent priority boosting (Strict Country Partition)
+        if country == "IN":
+            if primary_intent == "FOOD_ASSISTANCE":
+                primary_boost_ids.update(["SCH-IN-014", "SCH-IN-004"])
+            elif primary_intent == "UNEMPLOYMENT_SUPPORT":
+                primary_boost_ids.update(["SCH-IN-007"])
+            elif primary_intent == "HOUSING_ASSISTANCE":
+                primary_boost_ids.update(["SCH-IN-001"])
+        elif country == "US":
+            if primary_intent == "FOOD_ASSISTANCE":
+                primary_boost_ids.update(["SCH-GOV-002"])
+            elif primary_intent == "UNEMPLOYMENT_SUPPORT":
+                primary_boost_ids.update(["SCH-GOV-003"])
+            elif primary_intent == "HOUSING_ASSISTANCE":
+                primary_boost_ids.update(["SCH-GOV-001"])
 
         for scheme in self._schemes.values():
             # 1. Strict Country Jurisdiction Filter
