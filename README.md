@@ -15,7 +15,7 @@
 
 <p align="center">
   <a href="https://sahay-cyan.vercel.app/"><strong>🚀 Live Demo</strong></a> &nbsp;•&nbsp;
-  <a href="https://github.com/mrashish18/sahay"><strong>💻 GitHub</strong></a> &nbsp;•&nbsp;
+  <a href="https://github.com/mrashish18/sahay"><strong>💻 GitHub Repository</strong></a> &nbsp;•&nbsp;
   <a href="docs/architecture.md"><strong>🏗️ Architecture Specification</strong></a>
 </p>
 
@@ -36,77 +36,75 @@
 
 ---
 
-## 🎯 What is SAHAY?
+## 📌 Executive Summary
 
-SAHAY 2.0 is a constrained civic decision-support navigator that converts plain-language citizen situations into verified public-service guidance, deterministic eligibility evaluations, document checklists, and safety-first emergency assistance.
+**SAHAY 2.0** is an intelligent, constrained civic decision-support platform engineered to bridge the gap between plain-language citizen queries and verified government welfare services.
 
-### The Problem
-Accessing government welfare and public services during distress is fragmented and difficult:
-- **Fragmented Services:** Welfare programs are scattered across dozens of national, state, and municipal portals.
-- **Administrative Complexity:** Citizens rarely know the legal titles of government programs they need.
-- **Unclear Eligibility:** Dense legal criteria make self-evaluation confusing and error-prone.
-- **Emergency Safety Delays:** Generic tools treat life-threatening flood crises like routine paperwork inquiries.
+In times of personal distress or disaster, citizens face overwhelming administrative barriers: scattered welfare portals, dense legal jargon, complex eligibility rules, and dangerous delays during emergency crises. SAHAY transforms unstructured citizen input (in English, Hindi, or Hinglish) into **verified public-service program discovery**, **code-verified deterministic eligibility evaluations**, **actionable document checklists**, and **safety-first crisis routing**.
 
-### The Solution
-SAHAY converts natural-language queries into structured, actionable civic outcomes:
-- **Relevant Discovery:** Matches citizen situations to official welfare and public assistance programs.
-- **Deterministic Eligibility:** Evaluates qualifications through a code-verified rules engine outside the LLM.
-- **Action Checklists:** Generates required document lists and direct links to official government portals (`.gov.in`, `usa.gov`).
-- **Crisis-First Safety:** Automatically surfaces emergency evacuation steps and priority helplines during disasters.
+> 💡 **Core Philosophy:** *AI interprets citizen context; deterministic code evaluates legal criteria; crisis safety takes absolute priority above administrative paperwork.*
+
+---
+
+## 🎯 The Problem & The SAHAY Solution
+
+### 🚨 The Problem
+1. **Fragmented Welfare Portals:** Public services and emergency assistance are scattered across dozens of national, state, and municipal websites.
+2. **Administrative Complexity:** Citizens rarely know the formal legal titles of government programs (e.g. searching for *"ration for my children"* instead of *"NFSA SCH-IN-014"*).
+3. **Confusing Legal Criteria:** Dense eligibility rules lead to self-evaluation confusion and missed benefits.
+4. **Emergency Safety Delays:** Standard conversational AI models treat life-threatening flood crises like routine paperwork inquiries, risking citizen safety.
+
+### ✨ The SAHAY Solution
+- **Natural-Language Discovery:** Maps plain-language citizen situations directly to official welfare schemes.
+- **Deterministic Rules Engine:** Evaluates legal qualifications in Python code outside probabilistic LLM text generation.
+- **Actionable Document Checklists:** Provides exact document requirement lists and verified direct links to official government portals (`.gov.in`, `usa.gov`).
+- **First-Class Crisis Routing:** Automatically surfaces physical evacuation steps and priority helplines during emergency disasters.
 
 ---
 
 ## 💡 Why SAHAY?
 
-| Capability | What SAHAY Does |
+| Architectural Dimension | What SAHAY Guarantees |
 | :--- | :--- |
-| 🧠 **Conversational Intelligence** | Understands natural-language civic queries and contextual follow-ups |
-| 🚨 **Crisis-First Routing** | Safety guidance and emergency helplines take priority during disasters |
-| ⚖️ **Deterministic Eligibility** | Eligibility decisions remain code-verified outside the probabilistic LLM |
-| 🌐 **Jurisdiction Isolation** | Enforces strict containment between Indian (`IN`) and US (`US`) resources |
-| 📚 **Verified Knowledge** | Cites official government portals (`pmkisan.gov.in`, `nfs.delhi.gov.in`, `usa.gov`) |
-| 🌦️ **Live Information** | Integrates real-time Open-Meteo weather and current information retrieval |
-| 🔐 **Sandboxed TTE** | Isolates dynamic tool execution behind AST static safety boundaries |
+| 🧠 **Conversational Intelligence** | Understands multi-turn natural queries, Hinglish phrasing, active scheme pronouns, and contextual follow-ups |
+| 🚨 **Crisis-First Priority** | Physical safety guidance and emergency helplines unconditionally intercept disaster queries |
+| ⚖️ **Deterministic Eligibility** | Legal criteria decisions remain code-verified in Python outside the probabilistic LLM |
+| 🌐 **Jurisdiction Isolation** | Enforces strict containment between Indian (`IN`) and US (`US`) welfare resources |
+| 📚 **Verified Source Traceability** | Cites official government portals (`pmkisan.gov.in`, `nfs.delhi.gov.in`, `usa.gov`) to eliminate fabrication risk |
+| 🌦️ **Live Information Integration** | Integrates real-time Open-Meteo weather API forecasts with location and temporal context resolution |
+| 🔐 **Sandboxed Tool Execution (TTE)** | Isolates dynamic tool evaluation behind AST static analysis (`ast.parse`) safety controls |
 
 ---
 
 ## ⚙️ How It Works
 
 ```text
-User Message (Plain Language / Hinglish)
-                   ↓
-      Semantic NLU Understanding
-                   ↓
-      Intent, Context & Jurisdiction
-                   ↓
-Crisis / Public Service / Weather / General Info Routing
-                   ↓
-      Knowledge Base + Live Information
-                   ↓
-      Deterministic Rules Eligibility Engine
-                   ↓
-      Action Plan & Document Guide
-                   ↓
-      Structured SahayResponse JSON Contract
+               User Query (English / Hinglish)
+                             │
+                             ▼
+              [ Semantic NLU Understanding ]
+        (Extracts Intent, Facts, Location & Jurisdiction)
+                             │
+            ┌────────────────┴────────────────┐
+            ▼                                 ▼
+   [ Crisis Safety Route ]         [ Standard Civic Route ]
+ (Evacuation & Helplines)         (Knowledge Base Retrieval)
+            │                                 │
+            └────────────────┬────────────────┘
+                             ▼
+              [ Live Information Integration ]
+            (Open-Meteo Weather / Web Search API)
+                             │
+                             ▼
+           [ Deterministic Eligibility Engine ]
+        (Code-Verified Rule Criteria Evaluation)
+                             │
+                             ▼
+             [ Action Plan & Document Guide ]
+                             │
+                             ▼
+          Structured SahayResponse JSON Payload
 ```
-
----
-
-## 🧠 Core Intelligence Layer
-
-The backend architecture separates interpretation, safety, decision-making, context, live information, and controlled execution across decoupled services:
-
-| Service | File | Responsibility |
-| :--- | :--- | :--- |
-| **Orchestration** | [`ai_orchestrator.py`](backend/app/services/ai_orchestrator.py) | Coordinates end-to-end request processing workflow |
-| **Semantic NLU** | [`semantic_understanding.py`](backend/app/services/semantic_understanding.py) | Extracts intent, facts, entities & handles ambiguity |
-| **Crisis Safety** | [`crisis_navigator.py`](backend/app/services/crisis_navigator.py) | First-class priority routing for emergency & safety situations |
-| **Eligibility** | [`eligibility_engine.py`](backend/app/services/eligibility_engine.py) | Code-verified deterministic rule criteria evaluation |
-| **Knowledge Base** | [`knowledge_base.py`](backend/app/services/knowledge_base.py) | Accesses verified public-service scheme datasets |
-| **Memory** | [`conversation_memory.py`](backend/app/services/conversation_memory.py) | Maintains multi-turn context & jurisdiction state |
-| **Live Search** | [`web_search_service.py`](backend/app/services/web_search_service.py) | Retrieves real-time weather & live web information |
-| **LLM Provider** | [`llm_provider.py`](backend/app/services/llm_provider.py) | Multi-provider LLM abstraction layer |
-| **Tool Execution** | [`tte_engine.py`](backend/app/services/tte_engine.py) | Sandboxed tool proposal with AST static safety checks |
 
 ---
 
@@ -124,7 +122,7 @@ The backend architecture separates interpretation, safety, decision-making, cont
 
 <br/>
 
-### 🚨 Crisis & Safety
+### 🚨 Crisis & Safety Routing
 <p align="center">
   <img src="screenshots/sahay-crisis-assistance.png" alt="Safety-first crisis routing" width="48%"/>
   &nbsp;
@@ -136,23 +134,11 @@ The backend architecture separates interpretation, safety, decision-making, cont
 
 <br/>
 
-### 🌦️ Live Intelligence
+### 🌦️ Live Intelligence Integration
 <p align="center">
   <img src="screenshots/sahay-weather-query.png" alt="Weather query in Hinglish" width="48%"/>
   &nbsp;
   <img src="screenshots/sahay-weather-result.png" alt="Real-time Open-Meteo weather payload" width="48%"/>
-</p>
-<p align="center">
-  <em>Real-time Open-Meteo weather forecast integration with location & multi-turn context resolution</em>
-</p>
-
-<br/>
-
-### ⚙️ Engineering & Tool Execution
-<p align="center">
-  <img src="screenshots/sahay-how-it-works.png" alt="Sahay Intelligence Architecture" width="48%"/>
-  &nbsp;
-  <img src="screenshots/sahay-tool-registry.png" alt="Sahay Tool Execution Engine" width="48%"/>
 </p>
 <p align="center">
   <em>End-to-end request processing flow paired with Sandboxed AST Tool Execution Engine (TTE) controls</em>
@@ -160,52 +146,70 @@ The backend architecture separates interpretation, safety, decision-making, cont
 
 ---
 
-## 🎬 Try These Scenarios
+## 🧠 Core Intelligence Architecture
 
-| Scenario | Example Query | Demonstrates |
+The backend architecture separates interpretation, safety, decision-making, context, live information, and controlled execution across decoupled services:
+
+| Component | Service File | Architectural Responsibility |
 | :--- | :--- | :--- |
-| 🥫 **Public Service** | *"mujhe ration chahiye"* | Scheme discovery & document checklist |
-| ⚖️ **Eligibility** | *"am I eligible for it?"* | Active scheme pronoun resolution & rule evaluation |
-| 🚨 **Crisis Routing** | *"mera ghar pani me doob gaya"* | Emergency safety guidance & helpline dispatch |
-| 🌦️ **Live Weather** | *"will it rain tomorrow in Patna?"* | Real-time weather forecast integration |
-| 🧠 **General Information** | *"What is Python?"* | Intent separation & factual response |
+| **Orchestrator** | [`ai_orchestrator.py`](backend/app/services/ai_orchestrator.py) | Coordinates end-to-end request processing workflow and fallback logic |
+| **Semantic NLU** | [`semantic_understanding.py`](backend/app/services/semantic_understanding.py) | Extracts intent, user facts, location entities, and active pronoun state |
+| **Crisis Safety** | [`crisis_navigator.py`](backend/app/services/crisis_navigator.py) | First-class priority routing for emergency disasters & safety threats |
+| **Eligibility** | [`eligibility_engine.py`](backend/app/services/eligibility_engine.py) | Code-verified deterministic rule criteria evaluation outside the LLM |
+| **Knowledge Base** | [`knowledge_base.py`](backend/app/services/knowledge_base.py) | Hybrid RAG retrieval across verified public-service scheme datasets |
+| **Memory** | [`conversation_memory.py`](backend/app/services/conversation_memory.py) | Maintains multi-turn context, location history, and active scheme state |
+| **Live Search** | [`web_search_service.py`](backend/app/services/web_search_service.py) | Retrieves real-time Open-Meteo weather & live web information |
+| **LLM Provider** | [`llm_provider.py`](backend/app/services/llm_provider.py) | Multi-provider LLM abstraction layer with strict response schema formatting |
+| **Tool Execution** | [`tte_engine.py`](backend/app/services/tte_engine.py) | Sandboxed tool proposal engine with AST static security linter |
 
 ---
 
-## 🛡️ Trust & Safety
+## 🎬 Judge-Ready Demonstration Scenarios
 
-- **Deterministic Eligibility:** Legal criteria in `eligibility_engine.py` are evaluated strictly in Python. Probabilistic LLM outputs can **never** grant eligibility.
-- **Crisis Safety Boundary:** Emergencies automatically route to priority evacuation instructions and helpline data, bypassing routine discovery.
-- **Jurisdiction Isolation:** National and state policies enforce strict containment between Indian (`IN`) and US (`US`) resources.
-- **Source Traceability:** Every scheme cites authoritative government portals (`.gov.in`, `usa.gov`).
-- **Sandboxed Execution:** Dynamic tool proposals require AST static analysis (`ast.parse`) blocking dangerous modules (`sys`, `os`, `subprocess`).
+| Scenario | Example Query | Core Capability Tested |
+| :--- | :--- | :--- |
+| 🥫 **Public Service Discovery** | *"mujhe ration chahiye"* | Scheme matching & required document checklist generation |
+| ⚖️ **Contextual Eligibility** | *"am I eligible for it?"* | Active scheme pronoun resolution (`it` → `SCH-IN-014`) & rule evaluation |
+| 🚨 **Crisis Safety Routing** | *"mera ghar pani me doob gaya"* | Emergency flood safety guidance & official helpline dispatch |
+| 🌦️ **Live Weather Forecast** | *"will tomorrow rain in Patna?"* | Real-time Open-Meteo API integration with location/temporal context |
+| 🧠 **General Knowledge** | *"What is Python?"* | Intent separation & factual response without triggering scheme tools |
+
+---
+
+## 🛡️ Trust & Safety Engineering
+
+- **Deterministic Eligibility Isolation:** Legal qualification rules in `eligibility_engine.py` are executed strictly in Python code. Probabilistic LLM outputs can **never** grant or deny eligibility.
+- **Crisis Safety Intercept:** Emergency disaster queries unconditionally trigger priority evacuation instructions and official helpline dispatch before administrative paperwork.
+- **Jurisdiction Containment:** National and state jurisdiction policies enforce strict boundary rules, preventing Indian schemes from leaking into US queries (and vice versa).
+- **Verifiable Source Traceability:** Scheme recommendations cite official government portals (`.gov.in`, `usa.gov`), eliminating hallucination risk for public benefits.
+- **AST Static Sandbox Security:** Dynamic Tool Execution (TTE) proposals undergo static AST analysis (`ast.parse`) blocking dangerous imports (`sys`, `os`, `subprocess`) and network access.
 
 ---
 
 ## 🧰 Technology Stack
 
-| Layer | Technology |
-| :--- | :--- |
-| **Frontend** | React 18.2, TypeScript 5.2, Vite 6.4.3 |
-| **Styling** | Tailwind CSS 3.4, Lucide Icons |
-| **Backend API** | FastAPI 0.110, Python 3.11+, Pydantic v2 |
-| **Database & Vector** | PostgreSQL 16, `pgvector` extension |
-| **AI & Retrieval** | Multi-Provider LLM Layer (Ollama / OpenAI), Open-Meteo API |
-| **Testing** | Pytest 8.1 (77 test suites) |
-| **Deployment** | Vercel (Frontend) + Docker Compose (Containerized Stack) |
+| Layer | Technology | Details |
+| :--- | :--- | :--- |
+| **Frontend UI** | React 18.2, TypeScript 5.2, Vite 6.4.3 | Responsive Single Page Application with dynamic response rendering |
+| **Styling** | Tailwind CSS 3.4, Lucide Icons | Modern glassmorphism dark theme with accessibility support |
+| **Backend API** | FastAPI 0.110, Python 3.11+, Pydantic v2 | High-performance asynchronous REST API architecture |
+| **Database & Vector** | PostgreSQL 16, `pgvector` extension | Vector similarity search and relational scheme storage |
+| **AI & Retrieval** | Multi-Provider LLM Layer, Open-Meteo API | Hybrid RAG retrieval and real-time live forecast integration |
+| **Testing & Quality** | Pytest 8.1 (77 test suites), TypeScript | 100% clean test suite and 0 TypeScript compilation errors |
+| **Deployment** | Vercel (Frontend SPA) + Docker Compose | Continuous deployment for frontend SPA and containerized backend stack |
 
 ---
 
-## 🚀 Live Demo
+## 🚀 Live Deployment & Verification
 
-- **Live Application:** [Open SAHAY Live Demo](https://sahay-cyan.vercel.app/)
-- **Source Repository:** [GitHub Repository](https://github.com/mrashish18/sahay)
+- **Live Production App:** [Open SAHAY Live Demo](https://sahay-cyan.vercel.app/)
+- **GitHub Repository:** [https://github.com/mrashish18/sahay](https://github.com/mrashish18/sahay)
 
-> *Note: The production interface is deployed on Vercel. For local execution with full FastAPI capabilities, run the backend locally or via Docker Compose.*
+> *Note: The production interface is hosted on Vercel. For full FastAPI capabilities in local environments, run the backend server on `http://localhost:8002`.*
 
 ---
 
-## 📚 Documentation
+## 📚 Technical Documentation
 
 - 🏗️ **[Architecture Specification](docs/architecture.md)** — Detailed technical design, system pipeline, and trust boundaries
 
@@ -213,23 +217,23 @@ The backend architecture separates interpretation, safety, decision-making, cont
 
 ## ⚡ Quick Start
 
-### 1. Clone & Configure
+### 1. Clone Repository & Configure Environment
 ```bash
 git clone https://github.com/mrashish18/sahay.git
 cd sahay
 cp .env.example .env
 ```
 
-### 2. Run Backend (PowerShell / Windows)
+### 2. Run Backend Server (PowerShell / Windows)
 ```powershell
 cd backend
 python -m venv venv
 .\venv\Scripts\Activate.ps1
 pip install -r requirements.txt
-python -m uvicorn app.main:app --port 8000 --reload
+python -m uvicorn app.main:app --port 8002 --reload
 ```
 
-### 3. Run Frontend
+### 3. Run Frontend Server
 ```bash
 cd frontend
 npm install
@@ -242,12 +246,12 @@ Open `http://localhost:5173` in your browser.
 
 ## ✅ Engineering Status
 
-| Check | Result |
-| :--- | :--- |
-| **Backend Pytest Suite** | **77 / 77 Passed** |
-| **TypeScript Compiler** | **0 Errors** (`npx tsc --noEmit`) |
-| **Production Vite Build** | **Passed** (`npm run build`) |
-| **Protected Scenarios** | **18 / 18 Verified** |
+| Verification Check | Result | Command / Method |
+| :--- | :--- | :--- |
+| **Backend Pytest Suite** | **77 / 77 Passed** | `python -m pytest` |
+| **TypeScript Compiler** | **0 Errors** | `npx tsc --noEmit` |
+| **Production Vite Build** | **Passed** | `npm run build` (`dist/` compiled in 2.49s) |
+| **Protected Scenarios** | **18 / 18 Verified** | Comprehensive NLU, Crisis & Weather matrix |
 
 ---
 
