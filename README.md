@@ -28,9 +28,7 @@
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16_pgvector-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)](#-technology-stack)
 [![Pytest](https://img.shields.io/badge/Pytest-77%2F77_PASSED-success?style=for-the-badge&logo=pytest&logoColor=white)](#-verification)
 
-<br/>
 
-[🚀 Live Demo](#-quick-start) • [📖 Architecture](docs/architecture.md) • [🎬 Judge Demo](docs/demo-script.md) • [📊 Presentation](docs/presentation_deck.md) • [🧪 Verification](docs/submission_checklist.md) • [🚢 Deployment](#-deployment)
 
 </div>
 
@@ -189,31 +187,7 @@ Citizen Situation (Plain Language / Hinglish)
   <em>Tool Execution Engine (TTE) — Sandboxed dynamic tool proposals with AST static analysis and human approval gates</em>
 </p>
 
----
 
-## 🎬 5-Minute Judge Demo
-
-Follow the complete step-by-step walkthrough in **[docs/demo-script.md](docs/demo-script.md)**:
-
-```text
-Turn 01: "Ration chahiye mere bachon ke liye"
- └─► Flow: PUBLIC_SERVICE / Food ──► Maps to SCH-IN-014 (NFSA Food Security)
-
-Turn 02: "Am I eligible for it?"
- └─► Pronoun Resolution: Resolves "it" to SCH-IN-014 ──► Evaluates income & employment facts deterministically
-
-Turn 03: "pmay milega mujhe"
- └─► Explicit Switch: Swaps active scheme payload to SCH-IN-001 (PMAY Housing)
-
-Turn 04: "ayushman milega?"
- └─► Explicit Switch: Swaps active scheme payload to SCH-IN-006 (Ayushman Bharat Health Insurance)
-
-Turn 05: "Mera ghar flood me damage ho gaya Bihar me"
- └─► Flow: CRISIS (Urgency: CRISIS) ──► Evacuation steps, Bihar Relief (SCH-IN-003), 0 US/FEMA resource leakage
-
-Turn 06: "What about evening?" (after General Query)
- └─► Flow: AMBIGUOUS ──► Prompts user for necessary clarification before making assumptions
-```
 
 ---
 
