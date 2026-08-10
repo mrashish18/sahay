@@ -253,21 +253,33 @@ Open `http://localhost:5173` in your browser.
 
 ---
 
+## 🔭 Future Roadmap
+
+| Area | Future Direction |
+| :--- | :--- |
+| 🌍 **Civic Coverage** | Expand verified public-service coverage across additional states and jurisdictions |
+| 🗣️ **Multilingual Access** | Enhance regional-language NLU and voice-assisted interaction |
+| 🔌 **Government Integrations** | Connect with official government service APIs where publicly available |
+| 📡 **Low-Connectivity Support** | Provide cached essential guidance for low-bandwidth environments |
+| ♿ **Accessibility** | Expand screen-reader and low-literacy accessibility features |
+| 🚨 **Crisis Intelligence** | Extend safety-first routing to additional disaster types and regional resources |
+
+---
+
 ## 📜 License & Copyright
 
 **Copyright © 2026 Ashish Kumar. All rights reserved.**
 
-This repository is provided for project demonstration and evaluation purposes. Third-party libraries, frameworks, APIs, icons, and services remain subject to their respective licenses and terms. Government public-service information referenced by SAHAY remains subject to the terms of its official sources.
+SAHAY 2.0 is provided for hackathon evaluation, demonstration, and educational purposes. Third-party libraries, frameworks, APIs, and services remain subject to their respective licenses and terms.
 
 ---
 
-<br/>
-
 <p align="center">
-  <strong>SAHAY 2.0</strong><br/>
-  <em>Because navigating public services shouldn't require navigating bureaucracy.</em>
-</p>
 
-<p align="center">
-  Built for civic empowerment • Designed for trust • Engineered for impact
+**SAHAY 2.0 — Civic Navigator**
+
+*Because navigating public services shouldn't require navigating bureaucracy.*
+
+**Built for civic empowerment • Designed for trust • Engineered for impact**
+
 </p>
