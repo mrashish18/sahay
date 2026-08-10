@@ -287,68 +287,64 @@ All verification checks have been empirically executed and passed:
 
 ## 📁 Project Structure
 
-SAHAY is organized as a modular civic-intelligence platform combining a React interface, FastAPI orchestration layer, deterministic eligibility services, crisis-aware routing, verified public-service data, live information retrieval, and sandboxed tool execution.
+A modular architecture separates the civic interface, intelligence engine, verified data, evaluation assets, and deployment configuration.
 
 ```text
 sahay/
-├── backend/                 # FastAPI backend & intelligence orchestration
-├── frontend/                # React + TypeScript civic interface
-├── data/                    # Verified public-service knowledge
-├── docs/                    # Architecture, demo & presentation material
-├── evaluations/             # Benchmark datasets & evaluation scenarios
-├── screenshots/             # Product UI & judge-facing visual evidence
-├── scripts/                 # Dataset ingestion & indexing utilities
-├── docker-compose.yml       # Multi-container deployment
-├── .env.example             # Environment configuration template
-└── README.md                # Project documentation
+│
+├── backend/          → FastAPI API + civic intelligence engine
+├── frontend/         → React + TypeScript user interface
+├── data/             → Verified public-service knowledge
+├── docs/             → Architecture, demo & presentation assets
+├── evaluations/      → Benchmark datasets & evaluation scenarios
+├── screenshots/      → Product screenshots & visual evidence
+├── scripts/          → Data ingestion & indexing utilities
+│
+├── docker-compose.yml → Containerized deployment
+├── .env.example       → Environment configuration template
+└── README.md          → Project documentation
 ```
 
 ### 🧠 Core Intelligence Layer
 
-```text
-backend/app/services/
-│
-├── ai_orchestrator.py
-│   └─ Central workflow & response orchestration
-│
-├── semantic_understanding.py
-│   └─ Intent, entity, fact & ambiguity analysis
-│
-├── crisis_navigator.py
-│   └─ Safety-first emergency routing
-│
-├── eligibility_engine.py
-│   └─ Deterministic rules-based eligibility
-│
-├── knowledge_base.py
-│   └─ Verified civic scheme knowledge
-│
-├── conversation_memory.py
-│   └─ Multi-turn context & jurisdiction state
-│
-├── web_search_service.py
-│   └─ Live weather & information retrieval
-│
-├── llm_provider.py
-│   └─ Multi-provider LLM abstraction
-│
-└── tte_engine.py
-    └─ Sandboxed Tool Execution Engine
+The intelligence layer separates interpretation, safety, decision-making, context, live information retrieval, and controlled tool execution.
 
-### 🔍 Architecture at a Glance
-
-| Layer | Responsibility | Trust Boundary |
+| Service | Responsibility | Role |
 | :--- | :--- | :--- |
-| **React UI** | Conversation and civic guidance interface | Presentation |
-| **FastAPI Orchestrator** | Routes requests to the correct workflow | Application |
-| **Semantic Understanding** | Interprets intent, facts, and context | Interpretation |
-| **Crisis Navigator** | Prioritizes emergency safety handling | Safety |
-| **Knowledge Base** | Provides verified scheme information | Data |
-| **Eligibility Engine** | Evaluates eligibility using deterministic rules | Decision |
-| **Web Search** | Retrieves current weather/information | External Data |
-| **TTE Engine** | Sandboxed tool evolution and execution | Isolated Execution |
+| **`ai_orchestrator.py`** | Coordinates end-to-end workflows | Orchestration |
+| **`semantic_understanding.py`** | Intent, facts, entities & ambiguity | NLU |
+| **`crisis_navigator.py`** | Safety-first emergency routing | Safety |
+| **`eligibility_engine.py`** | Deterministic eligibility evaluation | Decision |
+| **`knowledge_base.py`** | Verified civic scheme knowledge | Trusted Data |
+| **`conversation_memory.py`** | Multi-turn context & jurisdiction state | Context |
+| **`web_search_service.py`** | Live weather & current information | Retrieval |
+| **`llm_provider.py`** | LLM provider abstraction | AI Layer |
+| **`tte_engine.py`** | Sandboxed tool proposal/execution | Isolation |
 
-> **Design Principle:** AI interprets the user's situation; deterministic services control eligibility, safety boundaries, jurisdiction isolation, and tool execution.
+### 🔄 Architecture Flow
+
+```text
+User
+  ↓
+React + TypeScript UI
+  ↓
+FastAPI API
+  ↓
+Semantic Understanding
+  ↓
+AI Orchestrator
+  ├── Crisis Navigator ─────→ Safety Guidance
+  ├── Knowledge Base ───────→ Verified Services
+  ├── Eligibility Engine ───→ Deterministic Decision
+  ├── Web Search ────────────→ Current Information
+  └── TTE Engine ───────────→ Sandboxed Tools
+  ↓
+Structured SahayResponse
+  ↓
+User
+```
+
+> **🛡️ Trust Boundary:** The LLM interprets language and context; deterministic services remain responsible for eligibility decisions, crisis safety routing, jurisdiction isolation, and controlled tool execution.
 
 ---
 
