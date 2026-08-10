@@ -153,22 +153,30 @@ flowchart LR
 
 ### 🌤️ Weather Intelligence Sequence
 
-<table align="center" width="100%">
-  <tr>
-    <td width="33%" align="center">
-      <img src="screenshots/sahay-weather-query.png" alt="Weather Query" width="100%"/>
-      <br/><strong>1. QUERY</strong><br/><em>User asks for local weather forecast</em>
-    </td>
-    <td width="33%" align="center">
-      <img src="screenshots/sahay-weather-response.png" alt="Weather Intelligence" width="100%"/>
-      <br/><strong>2. INTELLIGENCE</strong><br/><em>NLU classifies weather intent & resolves location</em>
-    </td>
-    <td width="33%" align="center">
-      <img src="screenshots/sahay-weather-result.png" alt="Weather Result" width="100%"/>
-      <br/><strong>3. RESULT</strong><br/><em>Real-time Open-Meteo API forecast payload rendered</em>
-    </td>
-  </tr>
-</table>
+<p align="center">
+  <img src="screenshots/sahay-weather-query.png" alt="1. QUERY — User asks for local weather forecast" width="90%"/>
+</p>
+<p align="center">
+  <em>1. QUERY — User asks for local weather forecast</em>
+</p>
+
+<br/>
+
+<p align="center">
+  <img src="screenshots/sahay-weather-response.png" alt="2. INTELLIGENCE — NLU classifies weather intent & resolves location" width="90%"/>
+</p>
+<p align="center">
+  <em>2. INTELLIGENCE — NLU classifies weather intent & resolves location</em>
+</p>
+
+<br/>
+
+<p align="center">
+  <img src="screenshots/sahay-weather-result.png" alt="3. RESULT — Real-time Open-Meteo API forecast payload rendered" width="90%"/>
+</p>
+<p align="center">
+  <em>3. RESULT — Real-time Open-Meteo API forecast payload rendered</em>
+</p>
 
 ---
 
