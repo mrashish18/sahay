@@ -263,17 +263,10 @@ Read the full technical specification in **[docs/architecture.md](docs/architect
 
 ## 🏆 Verification
 
-| Check | Result |
-| :--- | :--- |
-| **Backend Tests** | ✅ **77 / 77 Passed** |
-| **TypeScript Check** | ✅ **0 Errors** |
-| **Production Build** | ✅ **Passed** |
-| **Conversational Benchmark** | ✅ **18 / 18 Scenarios** |
-| **Security Audit** | ✅ **No Critical Blockers** |
-
-> **Release Status:** Feature-frozen and verified for hackathon submission.
-
-[View the complete verification checklist →](docs/submission_checklist.md)
+- ✅ Backend: 77/77 tests passed
+- ✅ Frontend: 0 TypeScript errors
+- ✅ Production build: Passed
+- ✅ Conversational benchmark: 18/18 scenarios
 
 ---
 
@@ -397,16 +390,7 @@ EMBEDDING_PROVIDER=mock   # Options: mock, openai
 OPENAI_BASE_URL="https://openrouter.ai/api/v1"
 ```
 
----
 
-## 📚 Documentation
-
-| Resource | Description |
-| :--- | :--- |
-| **[Architecture](docs/architecture.md)** | System architecture & security boundaries |
-| **[Judge Demo](docs/demo-script.md)** | 5-minute demonstration flow |
-| **[Presentation Deck](docs/presentation_deck.md)** | Hackathon presentation |
-| **[Submission Checklist](docs/submission_checklist.md)** | Final verification checklist |
 
 ---
 
