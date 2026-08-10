@@ -261,16 +261,19 @@ Read the full technical specification in **[docs/architecture.md](docs/architect
 
 ---
 
-## 📊 Verification
+## 🏆 Verification
 
-All verification checks have been empirically executed and passed:
+| Check | Result |
+| :--- | :--- |
+| **Backend Tests** | ✅ **77 / 77 Passed** |
+| **TypeScript Check** | ✅ **0 Errors** |
+| **Production Build** | ✅ **Passed** |
+| **Conversational Benchmark** | ✅ **18 / 18 Scenarios** |
+| **Security Audit** | ✅ **No Critical Blockers** |
 
-| Verification Suite | Result | Status |
-| :--- | :--- | :--- |
-| **Backend Pytest Suite** | **77 / 77 Passed** (0 failures in 32.00s) | ✅ Verified |
-| **Frontend TypeScript Check** | **0 Errors** (`npx tsc --noEmit`) | ✅ Verified |
-| **Production Vite Build** | **Passed** (`npx vite build` in 2.46s) | ✅ Verified |
-| **Protected Scenarios** | **18 / 18 Verified** | ✅ Verified |
+> **Release Status:** Feature-frozen and verified for hackathon submission.
+
+[View the complete verification checklist →](docs/submission_checklist.md)
 
 ---
 
@@ -398,11 +401,11 @@ OPENAI_BASE_URL="https://openrouter.ai/api/v1"
 
 ## 📚 Documentation
 
-| Document | Purpose |
+| Resource | Description |
 | :--- | :--- |
-| **[Architecture Specification](docs/architecture.md)** | Full technical system design and security boundaries |
-| **[Judge Demo Script](docs/demo-script.md)** | 5-minute step-by-step judge walkthrough |
-| **[Presentation Deck](docs/presentation_deck.md)** | 10-slide judge presentation deck |
+| **[Architecture](docs/architecture.md)** | System architecture & security boundaries |
+| **[Judge Demo](docs/demo-script.md)** | 5-minute demonstration flow |
+| **[Presentation Deck](docs/presentation_deck.md)** | Hackathon presentation |
 | **[Submission Checklist](docs/submission_checklist.md)** | Final verification checklist |
 
 ---
