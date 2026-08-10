@@ -1,12 +1,21 @@
 <div align="center">
 
+# 🏛️ SAHAY 2.0 — Civic Navigator
+
+<p align="center">
+  <img src="screenshots/sahay-thumbnail.png" alt="SAHAY 2.0 — Civic Navigator | AI-Powered Public-Service & Crisis Assistance Navigator" width="100%">
+</p>
+
+<p align="center">
+  <strong>SAHAY 2.0 — Civic Navigator</strong><br>
+  <em>AI-Powered Public-Service & Crisis Assistance Navigator</em>
+</p>
+
+<p align="center">
+  <strong>Find the help you need. Know what to do next.</strong>
+</p>
+
 <br/>
-
-# 🏛️ SAHAY 2.0
-
-### **Civic Navigator**
-
-**AI-Powered Public-Service & Crisis Assistance Navigator**
 
 *When citizens face emergencies, bureaucratic complexity, or personal distress — Sahay transforms confusion into actionable civic guidance.*
 
@@ -23,10 +32,6 @@
 <br/>
 
 [GitHub Repository](https://github.com/mrashish18/sahay) • [Architecture Specification](docs/architecture.md) • [Judge Demo Script](docs/demo-script.md) • [Presentation Deck](docs/presentation_deck.md)
-
-<br/>
-
-<img src="screenshots/sahay-thumbnail.png" alt="Sahay 2.0 Civic Navigator — Hero Cover" width="90%"/>
 
 <br/>
 

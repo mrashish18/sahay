@@ -250,7 +250,7 @@ class OpenAIProvider(BaseLLMProvider):
     def __init__(self, model_name: str = "openai/gpt-4o-mini"):
         self.model_name = os.getenv("LLM_MODEL", settings.LLM_MODEL)
         self.api_key = os.getenv("OPENAI_API_KEY")
-        self.base_url = os.getenv("OPENAI_BASE_URL", "https://openrouter.ai/api/v1").rstrip("/")
+        self.base_url = os.getenv("OPENAI_BASE_URL", getattr(settings, "OPENAI_BASE_URL", "https://openrouter.ai/api/v1")).rstrip("/")
 
     def generate_situation_analysis(self, user_message: str, user_context: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         if not self.api_key or self.api_key == "mock_key":

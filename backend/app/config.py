@@ -18,9 +18,13 @@ class Settings(BaseSettings):
     # Database
     DATABASE_URL: str = "sqlite+aiosqlite:///./sahayai_dev.db" # Default fallback for local testing without postgres container
     
+    # Security & Auth
+    SECRET_KEY: str = "dev_secret_key_change_in_production"
+    
     # AI & Tools
     LLM_PROVIDER: str = "mock"
     LLM_MODEL: str = "openai/gpt-4o-mini"
+    OPENAI_BASE_URL: str = "https://openrouter.ai/api/v1"
     OLLAMA_BASE_URL: str = "http://localhost:11434"
     OLLAMA_MODEL: str = "qwen3:8b"
     EMBEDDING_PROVIDER: str = "mock"

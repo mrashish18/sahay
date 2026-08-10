@@ -166,10 +166,10 @@ SahayAIResponse = SahayResponse
 # ---------------------------------------------------------------------------
 
 class ChatRequest(BaseModel):
-    message: str = Field(..., min_length=1, description="Natural language situation description")
-    conversation_id: Optional[str] = Field(default=None, description="Optional session conversation identifier")
+    message: str = Field(..., min_length=1, max_length=10000, description="Natural language situation description")
+    conversation_id: Optional[str] = Field(default=None, max_length=100, description="Optional session conversation identifier")
     user_context: Optional[Dict[str, Any]] = Field(default_factory=dict, description="Optional extra user facts")
-    location: Optional[str] = Field(default=None, description="Optional state / district / region")
+    location: Optional[str] = Field(default=None, max_length=200, description="Optional state / district / region")
 
 # ---------------------------------------------------------------------------
 # Tool Registry & TTE Schemas
