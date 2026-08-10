@@ -47,8 +47,10 @@ scratch/
 
 # Internal Docs & Alternate Screenshots Exclusions (Local Reference Only)
 docs/crisis-navigator.md
+docs/demo-script.md
 docs/evaluation.md
 docs/jurisdiction-policy.md
+docs/presentation_deck.md
 docs/security.md
 docs/submission_checklist.md
 docs/tte.md

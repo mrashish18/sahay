@@ -16,8 +16,7 @@
 <p align="center">
   <a href="https://sahay-cyan.vercel.app/"><strong>🚀 Live Demo</strong></a> &nbsp;•&nbsp;
   <a href="https://github.com/mrashish18/sahay"><strong>💻 GitHub</strong></a> &nbsp;•&nbsp;
-  <a href="docs/architecture.md"><strong>🏗️ Architecture</strong></a> &nbsp;•&nbsp;
-  <a href="docs/demo-script.md"><strong>🎬 Demo Guide</strong></a>
+  <a href="docs/architecture.md"><strong>🏗️ Architecture Specification</strong></a>
 </p>
 
 <br/>
@@ -210,9 +209,7 @@ The backend architecture separates interpretation, safety, decision-making, cont
 
 ## 📚 Documentation
 
-- 🏗️ **[Architecture Specification](docs/architecture.md)** — Detailed technical design and trust boundaries
-- 🎬 **[Judge Demo Guide](docs/demo-script.md)** — Step-by-step evaluation walkthrough
-- 📊 **[Presentation Deck](docs/presentation_deck.md)** — Slide-by-slide project overview
+- 🏗️ **[Architecture Specification](docs/architecture.md)** — Detailed technical design, system pipeline, and trust boundaries
 
 ---
 
