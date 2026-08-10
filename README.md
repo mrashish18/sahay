@@ -110,54 +110,52 @@ The backend architecture separates interpretation, safety, decision-making, cont
 
 ---
 
-## 🖥️ Product Experience
+## 📸 Product Showcase
 
-### 🏠 Main Interface
+### 🏠 Civic Assistance & Trust
 <p align="center">
-  <img src="screenshots/sahay-homepage.png" alt="Sahay Civic Navigator — Main Interface" width="95%"/>
+  <img src="screenshots/sahay-homepage.png" alt="Sahay Civic Navigator — Main Interface" width="48%"/>
+  &nbsp;
+  <img src="screenshots/sahay-public-trust.png" alt="Sahay Public Trust Architecture" width="48%"/>
 </p>
 <p align="center">
-  <em>Natural language public-service discovery with verified program cards and document guidance</em>
+  <em>Natural-language public-service discovery paired with verified source traceability & legal disclaimers</em>
 </p>
 
----
+<br/>
 
-### 🚨 Crisis-Aware Assistance
+### 🚨 Crisis & Safety
 <p align="center">
-  <img src="screenshots/sahay-crisis-assistance.png" alt="Safety-first crisis routing for emergency situations" width="95%"/>
+  <img src="screenshots/sahay-crisis-assistance.png" alt="Safety-first crisis routing" width="48%"/>
+  &nbsp;
+  <img src="screenshots/sahay-emergency-flood-assistance.png" alt="Emergency flood relief guidance" width="48%"/>
 </p>
 <p align="center">
-  <em>First-Class Crisis Routing — Emergency evacuation guidance and priority helplines surface above paperwork</em>
+  <em>First-Class Crisis Routing — Physical evacuation steps & priority helplines surface above paperwork</em>
 </p>
 
----
+<br/>
 
-### 🌤️ Live Weather Integration
+### 🌦️ Live Intelligence
 <p align="center">
-  <img src="screenshots/sahay-weather-result.png" alt="Real-time weather forecast payload rendered" width="95%"/>
+  <img src="screenshots/sahay-weather-query.png" alt="Weather query in Hinglish" width="48%"/>
+  &nbsp;
+  <img src="screenshots/sahay-weather-result.png" alt="Real-time Open-Meteo weather payload" width="48%"/>
 </p>
 <p align="center">
-  <em>Real-time Open-Meteo weather forecast integration with location and time-period resolution</em>
+  <em>Real-time Open-Meteo weather forecast integration with location & multi-turn context resolution</em>
 </p>
 
----
+<br/>
 
-### 🛡️ Public Trust Architecture
+### ⚙️ Engineering & Tool Execution
 <p align="center">
-  <img src="screenshots/sahay-public-trust.png" alt="Sahay Public Trust Architecture" width="95%"/>
+  <img src="screenshots/sahay-how-it-works.png" alt="Sahay Intelligence Architecture" width="48%"/>
+  &nbsp;
+  <img src="screenshots/sahay-tool-registry.png" alt="Sahay Tool Execution Engine" width="48%"/>
 </p>
 <p align="center">
-  <em>Public Trust Architecture — Verified source traceability, deterministic eligibility, and legal disclaimers</em>
-</p>
-
----
-
-### 🔧 Sandboxed Tool Execution
-<p align="center">
-  <img src="screenshots/sahay-tool-registry.png" alt="Sahay Tool Execution Engine" width="95%"/>
-</p>
-<p align="center">
-  <em>Tool Execution Engine (TTE) — Sandboxed dynamic tool proposals with AST static analysis and approval gates</em>
+  <em>End-to-end request processing flow paired with Sandboxed AST Tool Execution Engine (TTE) controls</em>
 </p>
 
 ---
