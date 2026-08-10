@@ -287,34 +287,68 @@ All verification checks have been empirically executed and passed:
 
 ## 📁 Project Structure
 
+SAHAY is organized as a modular civic-intelligence platform combining a React interface, FastAPI orchestration layer, deterministic eligibility services, crisis-aware routing, verified public-service data, live information retrieval, and sandboxed tool execution.
+
 ```text
 sahay/
-├── backend/              # FastAPI application & AI orchestration engine
-├── frontend/             # React + TypeScript user interface
-├── data/                 # Authentic government welfare dataset (authentic_schemes.json)
-├── docs/                 # Architecture, presentation & judge walkthrough docs
-├── evaluations/          # Benchmark dataset & evaluation scenarios (benchmark.json)
-├── screenshots/          # High-resolution application product evidence
-├── scripts/              # Dataset ingestion & vector indexing scripts
-├── docker-compose.yml    # Multi-container containerization
-├── .env.example          # Environment configuration template
-└── README.md             # Project documentation
+├── backend/                 # FastAPI backend & intelligence orchestration
+├── frontend/                # React + TypeScript civic interface
+├── data/                    # Verified public-service knowledge
+├── docs/                    # Architecture, demo & presentation material
+├── evaluations/             # Benchmark datasets & evaluation scenarios
+├── screenshots/             # Product UI & judge-facing visual evidence
+├── scripts/                 # Dataset ingestion & indexing utilities
+├── docker-compose.yml       # Multi-container deployment
+├── .env.example             # Environment configuration template
+└── README.md                # Project documentation
 ```
 
-### Core Intelligence Services
+### 🧠 Core Intelligence Layer
 
 ```text
 backend/app/services/
-├── ai_orchestrator.py        # Central workflow router
-├── semantic_understanding.py # NLU, fact extraction, & intent analyzer
-├── crisis_navigator.py       # Emergency safety router
-├── eligibility_engine.py     # Deterministic rule evaluator
-├── knowledge_base.py         # Authentic scheme dataset provider
-├── conversation_memory.py    # Multi-turn context state manager
-├── web_search_service.py     # Open-Meteo weather & live search
-├── llm_provider.py           # Multi-provider LLM layer
-└── tte_engine.py             # Sandboxed Tool Execution Engine
-```
+│
+├── ai_orchestrator.py
+│   └─ Central workflow & response orchestration
+│
+├── semantic_understanding.py
+│   └─ Intent, entity, fact & ambiguity analysis
+│
+├── crisis_navigator.py
+│   └─ Safety-first emergency routing
+│
+├── eligibility_engine.py
+│   └─ Deterministic rules-based eligibility
+│
+├── knowledge_base.py
+│   └─ Verified civic scheme knowledge
+│
+├── conversation_memory.py
+│   └─ Multi-turn context & jurisdiction state
+│
+├── web_search_service.py
+│   └─ Live weather & information retrieval
+│
+├── llm_provider.py
+│   └─ Multi-provider LLM abstraction
+│
+└── tte_engine.py
+    └─ Sandboxed Tool Execution Engine
+
+### 🔍 Architecture at a Glance
+
+| Layer | Responsibility | Trust Boundary |
+| :--- | :--- | :--- |
+| **React UI** | Conversation and civic guidance interface | Presentation |
+| **FastAPI Orchestrator** | Routes requests to the correct workflow | Application |
+| **Semantic Understanding** | Interprets intent, facts, and context | Interpretation |
+| **Crisis Navigator** | Prioritizes emergency safety handling | Safety |
+| **Knowledge Base** | Provides verified scheme information | Data |
+| **Eligibility Engine** | Evaluates eligibility using deterministic rules | Decision |
+| **Web Search** | Retrieves current weather/information | External Data |
+| **TTE Engine** | Sandboxed tool evolution and execution | Isolated Execution |
+
+> **Design Principle:** AI interprets the user's situation; deterministic services control eligibility, safety boundaries, jurisdiction isolation, and tool execution.
 
 ---
 
