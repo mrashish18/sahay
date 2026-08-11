@@ -17,7 +17,7 @@ class Settings(BaseSettings):
     ]
     
     # Database
-    DATABASE_URL: str = "sqlite+aiosqlite:///./sahayai_dev.db" # Default fallback for local testing without postgres container
+    DATABASE_URL: str = os.getenv("DATABASE_URL", "sqlite+aiosqlite:////tmp/sahayai_dev.db")
     
     # Security & Auth
     SECRET_KEY: str = "dev_secret_key_change_in_production"
