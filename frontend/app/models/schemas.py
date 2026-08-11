@@ -34,6 +34,27 @@ class TTEProposalStatus(str, Enum):
     APPROVED = "APPROVED"
     REJECTED = "REJECTED"
 
+class EntityProvenance(str, Enum):
+    CURRENT_MESSAGE = "current_message"
+    CONVERSATION_CONTEXT = "conversation_context"
+    TOOL_RESULT = "tool_result"
+    SYSTEM_DEFAULT = "system_default"
+
+class ConversationDecision(BaseModel):
+    intent: str = Field(..., description="Classified intent (e.g. WEATHER, PUBLIC_SERVICE, CRISIS)")
+    sub_intent: Optional[str] = Field(None, description="Classified sub-intent (e.g. FORECAST, FOOD_ASSISTANCE, FLOOD)")
+    entities: Dict[str, Any] = Field(default_factory=dict, description="Extracted entities map")
+    entity_provenance: Dict[str, EntityProvenance] = Field(default_factory=dict, description="Provenance tracking for extracted entities")
+    temporal_context: Dict[str, Any] = Field(default_factory=dict, description="Resolved date and time period")
+    jurisdiction: Dict[str, Any] = Field(default_factory=dict, description="Country, state, and region context")
+    conversation_context_used: Dict[str, Any] = Field(default_factory=dict, description="Context inheritance decision record")
+    missing_information: List[MissingInfoItem] = Field(default_factory=list, description="Missing items requiring clarification")
+    action_required: str = Field(default="GENERATE_RESPONSE", description="Action decision (e.g. FETCH_WEATHER, SEARCH_KNOWLEDGE_BASE, ASK_CLARIFICATION)")
+    selected_tool: Optional[str] = Field(None, description="Selected tool identifier")
+    tool_arguments: Dict[str, Any] = Field(default_factory=dict, description="Validated parameters sent to tool")
+    confidence: float = Field(default=1.0, ge=0.0, le=1.0, description="Decision confidence score")
+    validation_status: str = Field(default="PASSED", description="Tool result validation status: PASSED, FAILED, NOT_APPLICABLE")
+
 # ---------------------------------------------------------------------------
 # Nested Sub-Models
 # ---------------------------------------------------------------------------
@@ -156,6 +177,7 @@ class SahayResponse(BaseModel):
         default="DISCLAIMER: Sahay is an independent public-service navigator and does not guarantee official legal eligibility. Please verify all requirements directly with the issuing government authority.",
         description="Non-hallucinatory legal disclaimer"
     )
+    decision_metadata: Optional[ConversationDecision] = Field(default=None, description="Inspectable structured decision metadata (Debug Observability)")
 
 # Alias for backward compatibility
 SahayAIResponse = SahayResponse

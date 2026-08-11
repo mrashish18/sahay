@@ -20,7 +20,9 @@ class SemanticQueryResult:
         urgency: Urgency,
         missing_information: List[MissingInfoItem],
         temporal_requirement: str = "NONE",
-        domain: Optional[str] = None
+        domain: Optional[str] = None,
+        sub_intent: Optional[str] = None,
+        entity_provenance: Optional[Dict[str, Any]] = None
     ):
         self.raw_query = raw_query
         self.normalized_query = normalized_query
@@ -33,6 +35,8 @@ class SemanticQueryResult:
         self.missing_information = missing_information
         self.temporal_requirement = temporal_requirement
         self.domain = domain
+        self.sub_intent = sub_intent
+        self.entity_provenance = entity_provenance or {}
 
 class SemanticUnderstandingEngine:
     """
@@ -114,7 +118,7 @@ class SemanticUnderstandingEngine:
                 "tomorrow", "today", "tonight", "yesterday", "evening", "morning", "afternoon",
                 "night", "raat", "subah", "dopahar", "shaam", "kal", "aaj", "please", "help",
                 "hogi", "hoga", "hain", "hai", "kaisa", "kaisi", "kya", "batao", "bataiye", "weather", "rain",
-                "it", "this", "that", "them", "him", "her", "me", "us", "you", "which", "what", "my", "your",
+                "it", "this", "that", "there", "here", "where", "somewhere", "anywhere", "place", "them", "him", "her", "me", "us", "you", "which", "what", "my", "your",
                 "our", "their", "who", "whom", "whose", "info", "information", "details", "scheme", "program",
                 "support", "assistance", "food", "ration", "housing", "health", "card", "job", "work"
             ]
@@ -126,7 +130,7 @@ class SemanticUnderstandingEngine:
             if clean_words:
                 loc = " ".join(clean_words).strip("?,.!")
                 if loc and len(loc) >= 3 and not any(w in loc.lower() for w in ["weather", "rain", "forecast", "temp", "mausam"]):
-                    if loc.lower() not in ["us", "usa", "united states", "india", "bihar", "uk", "it", "this", "that"]:
+                    if loc.lower() not in ["us", "usa", "united states", "india", "bihar", "uk", "it", "this", "that", "there", "here", "where"]:
                         return loc.title()
 
         return None
@@ -143,11 +147,14 @@ class SemanticUnderstandingEngine:
         text_raw = user_message.strip()
         text_lower = text_raw.lower()
 
-        # -------------------------------------------------------------------
         # 1. PRIORITY #1: SAFETY & CRISIS INTENT (Overrides all other routes)
         # -------------------------------------------------------------------
-        if any(re.search(pat, text_lower) for pat in self.CRISIS_PATTERNS):
-            norm_query = "My house was damaged by flooding and we need emergency shelter."
+        is_crisis_query = any(re.search(pat, text_lower) for pat in self.CRISIS_PATTERNS)
+        is_active_crisis = getattr(session, "active_topic", None) == "CRISIS" or getattr(session, "active_domain", None) == "CRISIS"
+        is_crisis_followup = is_active_crisis and any(w in text_lower for w in ["what should i do", "where can i get help", "how to get help", "what to do", "next steps", "shelter", "help"])
+
+        if is_crisis_query or is_crisis_followup:
+            norm_query = "My house was damaged by flooding and we need emergency shelter." if is_crisis_query else "Emergency assistance follow-up: what action steps and resources are available?"
             extracted_facts = dict(user_context)
             extracted_facts["disaster_impact"] = "flood"
             if any(w in text_lower for w in ["nowhere to stay", "evicted", "homeless", "need shelter"]):
@@ -169,6 +176,35 @@ class SemanticUnderstandingEngine:
                 missing_information=[],
                 temporal_requirement="NONE",
                 domain="CRISIS"
+            )
+
+        # -------------------------------------------------------------------
+        # 1B. PUBLIC SERVICE STATE FOLLOW-UP ("in Bihar", "in Delhi")
+        # -------------------------------------------------------------------
+        active_topic_val = getattr(session, "active_topic", None)
+        if text_lower in ["in bihar", "bihar", "in delhi", "delhi", "in us", "in usa"] and active_topic_val != "WEATHER":
+            st_name = "Bihar" if "bihar" in text_lower else ("Delhi" if "delhi" in text_lower else "US")
+            c_name = "US" if st_name == "US" else "IN"
+            if session:
+                session.update_context(state=st_name, country=c_name)
+            ext_facts = dict(user_context)
+            ext_facts["state"] = st_name
+            ext_facts["country"] = c_name
+            if getattr(session, "service_context", {}).get("scheme_id"):
+                ext_facts["scheme"] = session.service_context["scheme_id"]
+            urgency = Urgency(level=UrgencyLevel.NORMAL, score=0.30, reasoning="Updated location jurisdiction context.")
+            return SemanticQueryResult(
+                raw_query=text_raw,
+                normalized_query=f"Public service assistance in {st_name}",
+                flow=FlowType.PUBLIC_SERVICE,
+                primary_intent=active_topic_val or "PUBLIC_SERVICE",
+                secondary_intents=[],
+                confidence=0.95,
+                entities=ext_facts,
+                urgency=urgency,
+                missing_information=[],
+                temporal_requirement="NONE",
+                domain="PUBLIC_SERVICE"
             )
 
         # -------------------------------------------------------------------
@@ -430,14 +466,15 @@ class SemanticUnderstandingEngine:
                     domain="WEATHER"
                 )
 
-        # Pronoun / Reference / Explicit Scheme Follow-Up ("am i eligible for it?", "pmay milega mujhe", "ayushman milega?")
+        # Pronoun / Reference / Explicit Scheme Follow-Up ("am i eligible for it?", "what documents do I need?", "pmay milega mujhe")
         has_elig_kw = any(w in text_lower for w in ["eligible", "eligibility", "qualify", "can i get", "milega", "milegi"])
+        has_doc_kw = any(w in text_lower for w in ["document", "documents", "paperwork", "proof", "docs"])
         has_explicit_pmay = "pmay" in text_lower or "housing" in text_lower or "awas" in text_lower
         has_explicit_ayushman = "ayushman" in text_lower or "health card" in text_lower or "pmjay" in text_lower
         has_explicit_ration = "ration" in text_lower or "food" in text_lower or "nfsa" in text_lower
         has_explicit_kisan = "kisan" in text_lower or "pm-kisan" in text_lower
 
-        if has_elig_kw or has_explicit_pmay or has_explicit_ayushman or has_explicit_kisan or (has_explicit_ration and has_elig_kw):
+        if has_elig_kw or has_doc_kw or has_explicit_pmay or has_explicit_ayushman or has_explicit_kisan or (has_explicit_ration and (has_elig_kw or has_doc_kw)):
             if has_explicit_pmay:
                 resolved_scheme = "PMAY"
                 scheme_id = "SCH-IN-001"
@@ -452,7 +489,7 @@ class SemanticUnderstandingEngine:
                 scheme_id = "SCH-IN-014"
             else:
                 ref_target = session.resolve_reference(text_raw) if session else None
-                target_scheme = ref_target or active_scheme or ("NFSA" if active_topic == "FOOD_ASSISTANCE" else None)
+                target_scheme = ref_target or active_scheme or ("NFSA" if active_topic in ["FOOD_ASSISTANCE", "NFSA", "PUBLIC_SERVICE"] else None)
                 if target_scheme == "SCH-IN-006":
                     resolved_scheme, scheme_id = "Ayushman Bharat", "SCH-IN-006"
                 elif target_scheme == "SCH-IN-001":
@@ -465,21 +502,24 @@ class SemanticUnderstandingEngine:
                     resolved_scheme = target_scheme or "NFSA"
                     scheme_id = "SCH-IN-014"
 
+            target_flow = FlowType.DOCUMENT_GUIDANCE if has_doc_kw else FlowType.ELIGIBILITY_CHECK
+            target_intent = "DOCUMENT_GUIDANCE" if has_doc_kw else "ELIGIBILITY_CHECK"
+
             if session:
                 session.clear_pending()
                 session.update_context(
                     active_topic=resolved_scheme,
-                    active_intent="ELIGIBILITY_CHECK",
+                    active_intent=target_intent,
                     active_domain="PUBLIC_SERVICE",
                     active_scheme=scheme_id
                 )
-            norm_query = f"Am I eligible for {resolved_scheme} scheme?"
-            urgency = Urgency(level=UrgencyLevel.NORMAL, score=0.40, reasoning="Resolved scheme eligibility check.")
+            norm_query = f"What documents are required for {resolved_scheme} scheme?" if has_doc_kw else f"Am I eligible for {resolved_scheme} scheme?"
+            urgency = Urgency(level=UrgencyLevel.NORMAL, score=0.40, reasoning="Resolved scheme requirements check.")
             return SemanticQueryResult(
                 raw_query=text_raw,
                 normalized_query=norm_query,
-                flow=FlowType.ELIGIBILITY_CHECK,
-                primary_intent="ELIGIBILITY_CHECK",
+                flow=target_flow,
+                primary_intent=target_intent,
                 secondary_intents=[],
                 confidence=0.96,
                 entities={"scheme": scheme_id, "scheme_name": resolved_scheme},

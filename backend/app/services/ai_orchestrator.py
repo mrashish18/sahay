@@ -4,7 +4,8 @@ from typing import List, Dict, Any, Optional
 from app.models.schemas import (
     SahayResponse, FlowType, UrgencyLevel, ChatRequest,
     RecommendationItem, DocumentItem, ActionStep, SourceItem,
-    EligibilityItem, EligibilityStatus, Situation, Urgency
+    EligibilityItem, EligibilityStatus, Situation, Urgency,
+    ConversationDecision, EntityProvenance
 )
 from app.services.conversation_router import conversation_router
 from app.services.web_search_service import web_search_service
@@ -86,6 +87,32 @@ class AIOrchestrator:
                     tool_used="Live Web Search"
                 )
 
+            selected_tool = "weather_forecast" if (weather_payload and weather_payload.get("city")) else "live_web_search"
+            tool_args = {"query": query_to_search, "location": sem_res.entities.get("location"), "time_period": req_time_period}
+            val_status = "PASSED" if (weather_payload and weather_payload.get("city")) or not web_missing else ("FAILED" if web_missing else "PASSED")
+
+            decision = ConversationDecision(
+                intent=primary_intent,
+                sub_intent=getattr(sem_res, "sub_intent", None) or primary_intent,
+                entities=sem_res.entities,
+                entity_provenance={
+                    k: (EntityProvenance.CURRENT_MESSAGE if sem_res.entities.get(k) and sem_res.entities.get(k) != getattr(session, k, None) else EntityProvenance.CONVERSATION_CONTEXT)
+                    for k in sem_res.entities
+                },
+                temporal_context={"date": sem_res.entities.get("time") or "today", "time_period": req_time_period},
+                jurisdiction={"country": country, "state": state},
+                conversation_context_used={
+                    "active_topic": getattr(session, "active_topic", None),
+                    "weather_location": session.weather_context.get("location")
+                },
+                missing_information=missing_info,
+                action_required="FETCH_WEATHER" if selected_tool == "weather_forecast" else "SEARCH_WEB",
+                selected_tool=selected_tool,
+                tool_arguments=tool_args,
+                confidence=sem_res.confidence,
+                validation_status=val_status
+            )
+
             resp = SahayResponse(
                 request_id=req_id,
                 timestamp=now_iso,
@@ -99,7 +126,8 @@ class AIOrchestrator:
                 action_plan=[],
                 sources=sources,
                 evidence=[],
-                disclaimer="Live web search result. Powered by Sahay AI Assistant."
+                disclaimer="Live web search result. Powered by Sahay AI Assistant.",
+                decision_metadata=decision
             )
             session.add_message("SAHAY", summary)
             return resp
@@ -118,6 +146,21 @@ class AIOrchestrator:
             situation = Situation(summary=summary, extracted_facts=extracted_facts, primary_intent="GENERAL_INFORMATION")
             session.reset_topic("GENERAL_INFORMATION", new_domain="GENERAL")
 
+            decision = ConversationDecision(
+                intent="GENERAL_INFORMATION",
+                sub_intent="GENERAL_KNOWLEDGE",
+                entities=sem_res.entities,
+                temporal_context={"date": "none"},
+                jurisdiction={"country": country, "state": state},
+                conversation_context_used={"active_topic": "GENERAL_INFORMATION"},
+                missing_information=[],
+                action_required="GENERATE_GROUNDED_RESPONSE",
+                selected_tool="llm_grounded_provider",
+                tool_arguments={"query": request.message},
+                confidence=sem_res.confidence,
+                validation_status="PASSED"
+            )
+
             resp = SahayResponse(
                 request_id=req_id,
                 timestamp=now_iso,
@@ -131,7 +174,8 @@ class AIOrchestrator:
                 action_plan=[],
                 sources=[],
                 evidence=[],
-                disclaimer="General information provided by Sahay AI Assistant."
+                disclaimer="General information provided by Sahay AI Assistant.",
+                decision_metadata=decision
             )
             session.add_message("SAHAY", summary)
             return resp
@@ -154,6 +198,21 @@ class AIOrchestrator:
             situation = Situation(summary=summary, extracted_facts=extracted_facts, primary_intent=sem_res.primary_intent or "AMBIGUOUS")
             session.update_context(active_topic="AMBIGUOUS", active_domain="GENERAL")
 
+            decision = ConversationDecision(
+                intent="AMBIGUOUS",
+                sub_intent="CLARIFICATION_REQUIRED",
+                entities=sem_res.entities,
+                temporal_context={"date": "none"},
+                jurisdiction={"country": country, "state": state},
+                conversation_context_used={"active_topic": "AMBIGUOUS"},
+                missing_information=missing_items,
+                action_required="ASK_CLARIFICATION",
+                selected_tool=None,
+                tool_arguments={},
+                confidence=sem_res.confidence,
+                validation_status="PASSED"
+            )
+
             resp = SahayResponse(
                 request_id=req_id,
                 timestamp=now_iso,
@@ -167,7 +226,8 @@ class AIOrchestrator:
                 action_plan=[],
                 sources=[],
                 evidence=[],
-                disclaimer="Clarification requested. Powered by Sahay AI Assistant."
+                disclaimer="Clarification requested. Powered by Sahay AI Assistant.",
+                decision_metadata=decision
             )
             session.add_message("SAHAY", summary)
             return resp
@@ -257,9 +317,9 @@ class AIOrchestrator:
                 target_scheme_id = "SCH-IN-014"
 
             # STRICT SCHEME LOCK RULE:
-            # If flow is ELIGIBILITY_CHECK or target_scheme_id is locked from prior turn,
+            # If flow is ELIGIBILITY_CHECK, DOCUMENT_GUIDANCE, or target_scheme_id is locked from prior turn,
             # return ONLY the referenced target scheme (Max recommendations = 1). NEVER run broad search.
-            if flow == FlowType.ELIGIBILITY_CHECK or has_pronoun_ref or any(w in request.message.lower() for w in ["eligible", "eligibility", "qualify"]):
+            if flow in [FlowType.ELIGIBILITY_CHECK, FlowType.DOCUMENT_GUIDANCE] or has_pronoun_ref or any(w in request.message.lower() for w in ["eligible", "eligibility", "qualify", "document", "documents"]):
                 target_scheme_id = target_scheme_id or "SCH-IN-014"
                 scheme_data = knowledge_base_service.get_scheme(target_scheme_id)
                 if scheme_data:
@@ -374,7 +434,11 @@ class AIOrchestrator:
             else:
                 action_plan = []
 
-            session.update_context(active_topic=situation.primary_intent or "PUBLIC_SERVICE", tool_used="Sahay RAG & Eligibility Engine")
+            session.update_context(
+                active_topic=situation.primary_intent or "PUBLIC_SERVICE",
+                active_scheme=target_scheme_id,
+                tool_used="Sahay RAG & Eligibility Engine"
+            )
 
         # -------------------------------------------------------------------
         # FINAL JURISDICTION PROTECTION GATE
@@ -389,6 +453,28 @@ class AIOrchestrator:
         elif country == "US":
             recommendations = [r for r in recommendations if r.country == "US"]
 
+        decision = ConversationDecision(
+            intent=primary_intent,
+            sub_intent=getattr(sem_res, "sub_intent", None) or primary_intent,
+            entities=sem_res.entities,
+            entity_provenance={
+                k: (EntityProvenance.CURRENT_MESSAGE if sem_res.entities.get(k) and sem_res.entities.get(k) != getattr(session, k, None) else EntityProvenance.CONVERSATION_CONTEXT)
+                for k in sem_res.entities
+            },
+            temporal_context={"date": sem_res.entities.get("time") or "none"},
+            jurisdiction={"country": country, "state": state},
+            conversation_context_used={
+                "active_topic": getattr(session, "active_topic", None),
+                "service_scheme": getattr(session.service_context, "get", lambda k: None)("scheme_id")
+            },
+            missing_information=missing_info,
+            action_required="EVALUATE_ELIGIBILITY" if flow == FlowType.ELIGIBILITY_CHECK else ("CRISIS_RESPONSE" if flow == FlowType.CRISIS else "SEARCH_KNOWLEDGE_BASE"),
+            selected_tool="eligibility_evaluator" if flow == FlowType.ELIGIBILITY_CHECK else ("crisis_navigator" if flow == FlowType.CRISIS else "rag_knowledge_base"),
+            tool_arguments={"country": country, "state": state, "primary_intent": primary_intent},
+            confidence=sem_res.confidence,
+            validation_status="PASSED"
+        )
+
         resp = SahayResponse(
             request_id=req_id,
             timestamp=now_iso,
@@ -402,7 +488,8 @@ class AIOrchestrator:
             action_plan=action_plan,
             sources=sources,
             evidence=evidence,
-            disclaimer="DISCLAIMER: Sahay is an independent public-service navigator and does not guarantee official legal eligibility. Please verify all requirements directly with the issuing government authority."
+            disclaimer="DISCLAIMER: Sahay is an independent public-service navigator and does not guarantee official legal eligibility. Please verify all requirements directly with the issuing government authority.",
+            decision_metadata=decision
         )
         session.add_message("SAHAY", situation.summary)
         return resp
