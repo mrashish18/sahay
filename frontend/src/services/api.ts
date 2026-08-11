@@ -21,9 +21,6 @@ export async function sendChatQuery(
   context: Record<string, any> = {},
   conversationId?: string
 ): Promise<SahayResponse> {
-  if (!BASE_URL && !isLocalhost) {
-    throw new Error('Frontend is deployed, but VITE_API_URL is not configured in Vercel. Please set VITE_API_URL=https://<PUBLIC-BACKEND-DOMAIN> in Vercel project settings.');
-  }
   try {
     const response = await fetch(`${API_BASE}/chat`, {
       method: 'POST',
