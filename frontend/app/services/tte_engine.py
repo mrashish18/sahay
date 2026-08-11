@@ -1,6 +1,6 @@
 import ast
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, List, Optional
 from app.models.schemas import TTEProposal, TTEProposalStatus, ToolDefinition
 from app.services.tool_registry import tool_registry_service
@@ -48,7 +48,7 @@ class TTEEngine:
             static_analysis_passed=ast_passed,
             security_audit_passed=sec_passed,
             status=initial_status,
-            created_at=datetime.utcnow().isoformat()
+            created_at=datetime.now(timezone.utc).isoformat()
         )
         
         self._proposals[proposal_id] = proposal
@@ -76,7 +76,7 @@ class TTEEngine:
             permissions=["READ_ONLY", "SANDBOX_EVAL"],
             reliability_score=0.90,
             status="ACTIVE",
-            created_at=datetime.utcnow().isoformat(),
+            created_at=datetime.now(timezone.utc).isoformat(),
             approved_by=approved_by
         )
         

@@ -1,7 +1,7 @@
 from enum import Enum
 from typing import List, Dict, Any, Optional
 from datetime import datetime
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 
 # ---------------------------------------------------------------------------
 # Enums
@@ -133,8 +133,7 @@ class SchemeCreate(SchemeBase):
 class Scheme(SchemeBase):
     id: str
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 # ---------------------------------------------------------------------------
 # Primary Backend Response Contract: SahayResponse

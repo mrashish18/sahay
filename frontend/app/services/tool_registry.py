@@ -1,5 +1,5 @@
 from typing import Dict, List, Optional
-from datetime import datetime
+from datetime import datetime, timezone
 from app.models.schemas import ToolDefinition
 
 class ToolRegistryService:
@@ -24,7 +24,7 @@ class ToolRegistryService:
                 permissions=["READ_ONLY", "PUBLIC_LOOKUP"],
                 reliability_score=0.98,
                 status="ACTIVE",
-                created_at=datetime.utcnow().isoformat(),
+                created_at=datetime.now(timezone.utc).isoformat(),
                 approved_by="SYSTEM"
             ),
             ToolDefinition(
@@ -37,7 +37,7 @@ class ToolRegistryService:
                 permissions=["READ_ONLY", "DETERMINISTIC_RULES"],
                 reliability_score=0.99,
                 status="ACTIVE",
-                created_at=datetime.utcnow().isoformat(),
+                created_at=datetime.now(timezone.utc).isoformat(),
                 approved_by="SYSTEM"
             )
         ]
