@@ -250,7 +250,9 @@ The backend architecture separates interpretation, safety, decision-making, cont
 
 ## 📚 Technical Documentation
 
-- 🏗️ **[Architecture Specification](docs/architecture.md)** — Detailed technical design, system pipeline, and trust boundaries
+- 🏗️ **[Architecture Specification](docs/architecture.md)** — System architecture, data flow, modular pipeline, and trust boundaries
+- 🛡️ **[Security Documentation](docs/security.md)** — Security model, validation, PII minimization, and safety boundaries
+- 📊 **[Evaluation Framework](docs/evaluation.md)** — Evaluation methodology, benchmark scenarios, and reproducible results
 
 ---
 
