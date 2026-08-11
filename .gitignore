@@ -1,59 +1,102 @@
-# Python
+# ==============================
+# ENVIRONMENT & SECRETS
+# ==============================
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+*.env
+!.env.example
+
+# ==============================
+# PYTHON VIRTUAL ENVIRONMENTS
+# ==============================
+.venv/
+venv/
+env/
+ENV/
+
+# ==============================
+# PYTHON CACHE / GENERATED FILES
+# ==============================
 __pycache__/
 *.py[cod]
-*$py.class
-*.so
-.Python
-env/
-venv/
-ENV/
-.venv/
+*.pyo
+*.pyd
 .pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.pyright/
 .coverage
+coverage/
 htmlcov/
 
-# Node / React
-node_modules/
-dist/
-build/
-*.tsbuildinfo
-.npm
-.eslintcache
+# ==============================
+# DATABASE / LOCAL RUNTIME DATA
+# ==============================
+*.db
+*.sqlite
+*.sqlite3
+instance/
 
-# Environment & Secrets
-.env
-.env.*
-!.env.example
-*.pem
-*.key
-credentials.json
-service-account.json
-
-# IDEs & OS
-.vscode/
-.idea/
-.DS_Store
-Thumbs.db
+# ==============================
+# LOGS
+# ==============================
 *.log
 
-# Docker & Databases
-*.sqlite3
-*.db
-docker_data/
+# ==============================
+# NODE / FRONTEND DEPENDENCIES
+# ==============================
+node_modules/
+.npm/
+.pnpm-store/
+.yarn/
 
-scratch/
-.vercel
-.env*
+# ==============================
+# FRONTEND BUILD OUTPUT
+# ==============================
+dist/
+build/
+.next/
+.nuxt/
+.vite/
 
-# Internal Docs Exclusions (Local Reference Only)
-docs/crisis-navigator.md
-docs/demo-script.md
-docs/evaluation.md
-docs/jurisdiction-policy.md
-docs/presentation_deck.md
-docs/security.md
-docs/submission_checklist.md
-docs/tte.md
-
-.vercel
+# ==============================
+# DEPLOYMENT TOOL CACHE
+# ==============================
+.vercel/
+.render/
+.netlify/
 .vercel_python_packages/
+
+# ==============================
+# IDE / EDITOR FILES
+# ==============================
+.vscode/
+.idea/
+.cursor/
+*.swp
+*.swo
+
+# ==============================
+# OS FILES
+# ==============================
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ==============================
+# TEMPORARY FILES
+# ==============================
+*.tmp
+*.temp
+*.bak
+*.cache
+
+# ==============================
+# ARCHIVES / LOCAL EXPORTS
+# ==============================
+*.zip
+*.tar
+*.tar.gz
