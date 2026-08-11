@@ -41,19 +41,19 @@
 <p align="center">
   <a href="https://sahay-cyan.vercel.app/"><img src="https://img.shields.io/badge/🌐%20Live%20Demo-Open%20Sahay-00C7B7?style=for-the-badge" alt="Live Demo"></a>
   <a href="https://sahay-cyan.vercel.app/api/docs"><img src="https://img.shields.io/badge/📚%20API%20Docs-Swagger%20UI-85EA2D?style=for-the-badge&logo=swagger" alt="API Docs"></a>
-  <a href="https://sahay-cyan.vercel.app/api"><img src="https://img.shields.io/badge/⚡%20Backend%20API-FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white" alt="Backend API"></a>
+  <a href="https://sahay-cyan.vercel.app/api/redoc"><img src="https://img.shields.io/badge/📖%20ReDoc-Interactive-FF4654?style=for-the-badge" alt="ReDoc"></a>
   <a href="https://sahay-cyan.vercel.app/api/health"><img src="https://img.shields.io/badge/❤️%20Health%20Check-HTTP%20200-22C55E?style=for-the-badge" alt="Health Check"></a>
 </p>
 
 | Resource | Link | Description |
 | :--- | :--- | :--- |
 | 🌐 **Live Application** | [https://sahay-cyan.vercel.app/](https://sahay-cyan.vercel.app/) | Open the interactive Sahay web application |
-| ⚡ **Backend API** | [https://sahay-cyan.vercel.app/api](https://sahay-cyan.vercel.app/api) | Production FastAPI backend root |
+| ❤️ **Backend Health** | [https://sahay-cyan.vercel.app/api/health](https://sahay-cyan.vercel.app/api/health) | Backend health status endpoint (`HTTP 200 OK`) |
 | 📚 **API Documentation** | [https://sahay-cyan.vercel.app/api/docs](https://sahay-cyan.vercel.app/api/docs) | Interactive Swagger UI API documentation |
-| ❤️ **API Health** | [https://sahay-cyan.vercel.app/api/health](https://sahay-cyan.vercel.app/api/health) | Backend status & health check endpoint |
+| 📖 **ReDoc Documentation** | [https://sahay-cyan.vercel.app/api/redoc](https://sahay-cyan.vercel.app/api/redoc) | Clean ReDoc API reference specification |
+| 📄 **OpenAPI Specification** | [https://sahay-cyan.vercel.app/api/openapi.json](https://sahay-cyan.vercel.app/api/openapi.json) | Raw OpenAPI v3 schema |
 | 🧰 **Tools Registry** | [https://sahay-cyan.vercel.app/api/v1/tools](https://sahay-cyan.vercel.app/api/v1/tools) | Active Sahay tool registry API |
-| 💬 **Chat API** | [`POST /api/v1/chat`](https://sahay-cyan.vercel.app/api/v1/chat) | Sahay AI Chat POST API endpoint |
-| 📄 **OpenAPI Schema** | [https://sahay-cyan.vercel.app/api/openapi.json](https://sahay-cyan.vercel.app/api/openapi.json) | Raw OpenAPI v3 specification |
+| 💬 **Chat API** | [`POST /api/v1/chat`](https://sahay-cyan.vercel.app/api/v1/chat) | Sahay AI Chat endpoint (*POST-only with JSON body*) |
 
 <p align="center">
   <img src="https://img.shields.io/badge/Deployment-Full--Stack%20Vercel-000000?style=flat-square&logo=vercel" alt="Vercel Deployment">
@@ -64,10 +64,10 @@
 ### 🏗️ Production Architecture
 
 - **Frontend**: [https://sahay-cyan.vercel.app/](https://sahay-cyan.vercel.app/)
-- **Backend**: [https://sahay-cyan.vercel.app/api](https://sahay-cyan.vercel.app/api)
+- **Backend API**: [https://sahay-cyan.vercel.app/api/health](https://sahay-cyan.vercel.app/api/health)
 - **API Documentation**: [https://sahay-cyan.vercel.app/api/docs](https://sahay-cyan.vercel.app/api/docs)
 
-Sahay uses a same-origin full-stack Vercel deployment. The React/Vite frontend is served from the main domain, while the FastAPI backend is exposed through `/api/*` serverless routes. This allows desktop and mobile clients to communicate with the production backend without relying on localhost or a separately hosted backend.
+Sahay is deployed as a single full-stack Vercel application. The React/Vite frontend is served from the primary domain, while the FastAPI backend is exposed through same-origin `/api/*` serverless routes. This allows desktop and mobile clients to communicate with the production backend without localhost dependencies or a separately hosted backend.
 
 ---
 

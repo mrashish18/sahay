@@ -17,9 +17,15 @@ class KnowledgeBaseService:
 
     def _load_dataset(self):
         base_dir = os.path.dirname(os.path.abspath(__file__))
-        resolved_path = os.path.abspath(os.path.join(base_dir, "../../../", "data/raw/authentic_schemes.json"))
+        possible_paths = [
+            os.path.abspath(os.path.join(base_dir, "../../../", "data/raw/authentic_schemes.json")),
+            os.path.abspath(os.path.join(base_dir, "../../", "data/raw/authentic_schemes.json")),
+            os.path.abspath(os.path.join(base_dir, "../", "data/raw/authentic_schemes.json")),
+            os.path.abspath(os.path.join(base_dir, "../../../frontend/data/raw/authentic_schemes.json")),
+        ]
+        resolved_path = next((p for p in possible_paths if os.path.exists(p)), None)
         
-        if os.path.exists(resolved_path):
+        if resolved_path:
             with open(resolved_path, "r", encoding="utf-8") as f:
                 data = json.load(f)
                 for item in data:

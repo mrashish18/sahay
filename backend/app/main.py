@@ -9,6 +9,7 @@ app = FastAPI(
     title=settings.PROJECT_NAME,
     docs_url=None,
     openapi_url=None,
+    redoc_url=None,
     description="Sahay — Public-Service & Crisis Assistance Navigator Backend"
 )
 
@@ -34,10 +35,20 @@ async def health_check():
 
 @app.get("/docs", include_in_schema=False)
 @app.get("/api/docs", include_in_schema=False)
+@app.get("/api/v1/docs", include_in_schema=False)
 async def custom_swagger_ui_html():
     return get_swagger_ui_html(
         openapi_url="/api/openapi.json",
         title=app.title + " - Swagger UI"
+    )
+
+@app.get("/redoc", include_in_schema=False)
+@app.get("/api/redoc", include_in_schema=False)
+@app.get("/api/v1/redoc", include_in_schema=False)
+async def custom_redoc_html():
+    return get_redoc_html(
+        openapi_url="/api/openapi.json",
+        title=app.title + " - ReDoc"
     )
 
 @app.get("/openapi.json", include_in_schema=False)
@@ -52,5 +63,7 @@ async def root():
     return {
         "message": "Welcome to Sahay Backend API",
         "health": "/api/health",
-        "docs": "/api/docs"
+        "docs": "/api/docs",
+        "openapi": "/api/openapi.json",
+        "redoc": "/api/redoc"
     }
