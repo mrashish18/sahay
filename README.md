@@ -36,6 +36,33 @@
 
 ---
 
+## 🔗 Project Links
+
+<p align="center">
+  <a href="https://sahay-cyan.vercel.app/">
+    <img src="https://img.shields.io/badge/🚀%20Live%20Demo-Sahay%202.0-00C7B7?style=for-the-badge" alt="Live Demo">
+  </a>
+  <a href="https://github.com/mrashish18/sahay">
+    <img src="https://img.shields.io/badge/💻%20GitHub-Source%20Code-181717?style=for-the-badge&logo=github" alt="GitHub Repository">
+  </a>
+</p>
+
+<p align="center">
+  <strong>🌐 Live Application:</strong>
+  <a href="https://sahay-cyan.vercel.app/">sahay-cyan.vercel.app</a>
+  &nbsp; • &nbsp;
+  <strong>📦 Source Code:</strong>
+  <a href="https://github.com/mrashish18/sahay">github.com/mrashish18/sahay</a>
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/Deployment-Production%20%7C%20Ready-22C55E?style=flat-square" alt="Production Deployment">
+  <img src="https://img.shields.io/badge/Platform-Vercel-000000?style=flat-square&logo=vercel" alt="Vercel">
+  <img src="https://img.shields.io/badge/Repository-Public-2563EB?style=flat-square" alt="Public Repository">
+</p>
+
+---
+
 ## 📌 Executive Summary
 
 **SAHAY 2.0** is an intelligent, constrained civic decision-support platform engineered to bridge the gap between plain-language citizen queries and verified government welfare services.
