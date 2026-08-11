@@ -1,0 +1,62 @@
+[
+  {
+    "id": "SCH-DEMO-001",
+    "title": "Emergency Flood & Housing Relief (DEMO DATA — NOT OFFICIAL)",
+    "issuing_authority": "Department of Emergency Management & Housing",
+    "jurisdiction": "National / State",
+    "category": "Disaster & Emergency Housing",
+    "summary": "Immediate temporary shelter funding and home repair grants for citizens affected by severe flooding.",
+    "description": "Provides up to 3 months of emergency rental assistance and one-time emergency grants for structural damage caused by natural floods.",
+    "eligibility_rules": {
+      "displacement": true,
+      "disaster_declared": true
+    },
+    "document_requirements": [
+      {
+        "document_name": "Government Photo ID",
+        "purpose": "Verify identity",
+        "how_to_obtain": "State Licensing Bureau or National ID center",
+        "is_mandatory": true
+      },
+      {
+        "document_name": "Proof of Property Damage / Evacuation Notice",
+        "purpose": "Verify disaster impact",
+        "how_to_obtain": "Local emergency inspector or disaster response team",
+        "is_mandatory": true
+      }
+    ],
+    "source_url": "https://emergency.gov.example/relief/flood-housing",
+    "effective_date": "2026-01-01",
+    "last_verified": "2026-08-01"
+  },
+  {
+    "id": "SCH-DEMO-002",
+    "title": "Low-Income Household Support Allowance (DEMO DATA — NOT OFFICIAL)",
+    "issuing_authority": "Ministry of Social Welfare & Family Support",
+    "jurisdiction": "National",
+    "category": "Financial & Family Welfare",
+    "summary": "Monthly financial assistance grant for low-income families and jobseekers.",
+    "description": "Provides financial stipend and nutritional assistance vouchers for households earning under the national poverty line.",
+    "eligibility_rules": {
+      "employment_status": "unemployed",
+      "income_max": 25000
+    },
+    "document_requirements": [
+      {
+        "document_name": "Proof of Household Income",
+        "purpose": "Verify income threshold compliance",
+        "how_to_obtain": "Local tax office or wage statement",
+        "is_mandatory": true
+      },
+      {
+        "document_name": "Unemployment Verification Letter",
+        "purpose": "Verify employment status",
+        "how_to_obtain": "Local Labor Department",
+        "is_mandatory": true
+      }
+    ],
+    "source_url": "https://welfare.gov.example/support/low-income-allowance",
+    "effective_date": "2026-01-01",
+    "last_verified": "2026-08-01"
+  }
+]

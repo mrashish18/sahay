@@ -38,8 +38,9 @@ def test_fact_extraction_no_hallucination():
     assert "household_income_exact" not in facts
     assert "state" not in facts
 
-def test_llm_provider_factory_and_fallback():
-    # Test default factory
+def test_llm_provider_factory_and_fallback(monkeypatch):
+    # Test default factory with mock provider env
+    monkeypatch.setenv("LLM_PROVIDER", "mock")
     provider = get_llm_provider()
     assert isinstance(provider, MockLLMProvider)
 

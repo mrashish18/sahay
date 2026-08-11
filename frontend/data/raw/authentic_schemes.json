@@ -1,0 +1,593 @@
+[
+  {
+    "id": "SCH-IN-001",
+    "title": "Pradhan Mantri Awas Yojana (PMAY) Housing Assistance",
+    "issuing_authority": "Ministry of Housing and Urban Affairs, Government of India",
+    "country": "IN",
+    "jurisdiction_level": "NATIONAL",
+    "region": null,
+    "jurisdiction": "India (National)",
+    "category": "Disaster & Housing Relief",
+    "summary": "Direct financial assistance and subsidy grants for pucca housing construction for low-income and displaced families in India.",
+    "description": "Provides financial aid up to ₹1,20,000 to ₹2,50,000 for constructing or upgrading primary residences for economically weaker sections (EWS) and flood/disaster displaced households.",
+    "eligibility_rules": {
+      "country": "IN",
+      "household_income": 300000,
+      "household_income_period": "annual",
+      "pucca_house_owned": false
+    },
+    "document_requirements": [
+      {
+        "document_name": "Aadhaar Card",
+        "purpose": "Verify national identity and biometric authentication",
+        "how_to_obtain": "Unique Identification Authority of India (UIDAI) portal or enrollment center",
+        "is_mandatory": true
+      },
+      {
+        "document_name": "Proof of Income / BPL Card",
+        "purpose": "Verify economically weaker section (EWS) eligibility",
+        "how_to_obtain": "Block Development Office (BDO) or Revenue Officer",
+        "is_mandatory": true
+      }
+    ],
+    "source_url": "https://pmaymis.gov.in",
+    "effective_date": "2026-01-01",
+    "last_verified": "2026-08-01"
+  },
+  {
+    "id": "SCH-IN-002",
+    "title": "PM-KISAN Samman Nidhi Income Support",
+    "issuing_authority": "Ministry of Agriculture and Farmers Welfare, Government of India",
+    "country": "IN",
+    "jurisdiction_level": "NATIONAL",
+    "region": null,
+    "jurisdiction": "India (National)",
+    "category": "Employment & Financial Support",
+    "summary": "Direct annual income support of ₹6,000 in three equal installments to farmer families across India.",
+    "description": "Provides supplementary financial assistance to small and marginal farmer families to procure agricultural inputs and meet emergency household needs.",
+    "eligibility_rules": {
+      "country": "IN",
+      "is_farmer": true
+    },
+    "document_requirements": [
+      {
+        "document_name": "Aadhaar Card & Bank Passbook",
+        "purpose": "Direct benefit transfer (DBT) verification",
+        "how_to_obtain": "Bank branch and UIDAI center",
+        "is_mandatory": true
+      },
+      {
+        "document_name": "Land Ownership Record (Khatian/RoR)",
+        "purpose": "Verify agricultural landholding status",
+        "how_to_obtain": "State Land Revenue Department",
+        "is_mandatory": true
+      }
+    ],
+    "source_url": "https://pmkisan.gov.in",
+    "effective_date": "2026-01-01",
+    "last_verified": "2026-08-01"
+  },
+  {
+    "id": "SCH-IN-003",
+    "title": "Bihar Emergency Flood Relief & Shelter Assistance",
+    "issuing_authority": "Disaster Management Department, Government of Bihar",
+    "country": "IN",
+    "jurisdiction_level": "STATE",
+    "region": "Bihar",
+    "jurisdiction": "India (Bihar)",
+    "category": "Disaster & Crisis Relief",
+    "summary": "Immediate cash relief grant (₹6,000 per household) and emergency shelter repair grants for flood-affected families in Bihar.",
+    "description": "Provides direct financial assistance to households in declared flood-affected districts of Bihar for emergency food, clothing, shelter repair, and immediate displacement relief.",
+    "eligibility_rules": {
+      "country": "IN",
+      "state": "Bihar",
+      "disaster_impact": "flood"
+    },
+    "document_requirements": [
+      {
+        "document_name": "Bihar Ration Card or Aadhaar",
+        "purpose": "Verify state residency in Bihar flood-affected district",
+        "how_to_obtain": "District Magistrate Office or Circle Office (CO)",
+        "is_mandatory": true
+      },
+      {
+        "document_name": "Bank Account Details",
+        "purpose": "Direct benefit transfer of flood relief grant",
+        "how_to_obtain": "Local bank branch passbook",
+        "is_mandatory": true
+      }
+    ],
+    "source_url": "https://disastermgmt.bihar.gov.in",
+    "effective_date": "2026-01-01",
+    "last_verified": "2026-08-01"
+  },
+  {
+    "id": "SCH-IN-004",
+    "title": "Delhi National Food Security Card (PDS Food Grains)",
+    "issuing_authority": "Department of Food Supplies & Consumer Affairs, Govt of NCT of Delhi",
+    "country": "IN",
+    "jurisdiction_level": "STATE",
+    "region": "Delhi",
+    "jurisdiction": "India (Delhi)",
+    "category": "Food Security & Low-Income Assistance",
+    "summary": "Highly subsidized monthly food grain allowance (5 kg per person) for low-income households in Delhi.",
+    "description": "Provides essential food grains (wheat, rice, sugar) through Fair Price Shops (FPS) to Priority Household (PRH) cardholders in the National Capital Territory of Delhi.",
+    "eligibility_rules": {
+      "country": "IN",
+      "state": "Delhi",
+      "household_income": 100000,
+      "household_income_period": "annual"
+    },
+    "document_requirements": [
+      {
+        "document_name": "Delhi NFSA Ration Card",
+        "purpose": "Entitlement verification at Fair Price Shop",
+        "how_to_obtain": "e-District Delhi portal",
+        "is_mandatory": true
+      },
+      {
+        "document_name": "Aadhaar Card of Family Head",
+        "purpose": "Biometric e-POS authentication",
+        "how_to_obtain": "UIDAI Center",
+        "is_mandatory": true
+      }
+    ],
+    "source_url": "https://nfs.delhi.gov.in",
+    "effective_date": "2026-01-01",
+    "last_verified": "2026-08-01"
+  },
+  {
+    "id": "SCH-IN-005",
+    "title": "Aadhaar Enrollment, Card Issue & Identity Update Services (UIDAI)",
+    "issuing_authority": "Unique Identification Authority of India (UIDAI), Govt of India",
+    "country": "IN",
+    "jurisdiction_level": "NATIONAL",
+    "region": null,
+    "jurisdiction": "India (National)",
+    "category": "Identity & Official Documents",
+    "summary": "Official portal for new Aadhaar card enrollment, biometric update, demographic address update, and PVC identity card requests.",
+    "description": "Enables citizens across India to apply for a new 12-digit Aadhaar number, update address or mobile details, download e-Aadhaar PDF, or locate official UIDAI enrollment centers.",
+    "eligibility_rules": {
+      "country": "IN"
+    },
+    "document_requirements": [
+      {
+        "document_name": "Proof of Identity (POI)",
+        "purpose": "Verify official name and identity (Voter ID, Passport, PAN Card)",
+        "how_to_obtain": "Respective issuing authority portal or officer",
+        "is_mandatory": true
+      },
+      {
+        "document_name": "Proof of Address (POA)",
+        "purpose": "Verify residential address (Electricity bill, Ration card, Bank statement)",
+        "how_to_obtain": "Utility company or revenue department",
+        "is_mandatory": true
+      }
+    ],
+    "source_url": "https://uidai.gov.in",
+    "effective_date": "2026-01-01",
+    "last_verified": "2026-08-01"
+  },
+  {
+    "id": "SCH-IN-006",
+    "title": "Ayushman Bharat PM-JAY Free Hospitalization Insurance",
+    "issuing_authority": "National Health Authority (NHA), Government of India",
+    "country": "IN",
+    "jurisdiction_level": "NATIONAL",
+    "region": null,
+    "jurisdiction": "India (National)",
+    "category": "Healthcare & Medical Assistance",
+    "summary": "Cashless health coverage up to ₹5,00,000 per family per year for secondary and tertiary care hospitalization.",
+    "description": "Provides cashless hospitalization and medical treatment coverage across empanelled public and private hospitals for low-income families identified under SECC data.",
+    "eligibility_rules": {
+      "country": "IN",
+      "household_income": 250000,
+      "household_income_period": "annual"
+    },
+    "document_requirements": [
+      {
+        "document_name": "Ayushman Card / Ration Card",
+        "purpose": "Cashless hospital admission verification",
+        "how_to_obtain": "PMJAY portal or hospital Pradhan Mantri Arogya Mitra counter",
+        "is_mandatory": true
+      },
+      {
+        "document_name": "Aadhaar Card",
+        "purpose": "Beneficiary e-KYC authentication",
+        "how_to_obtain": "UIDAI portal",
+        "is_mandatory": true
+      }
+    ],
+    "source_url": "https://pmjay.gov.in",
+    "effective_date": "2026-01-01",
+    "last_verified": "2026-08-01"
+  },
+  {
+    "id": "SCH-IN-007",
+    "title": "National Career Service (NCS) Jobseeker Registration & Skill Training",
+    "issuing_authority": "Ministry of Labour and Employment, Government of India",
+    "country": "IN",
+    "jurisdiction_level": "NATIONAL",
+    "region": null,
+    "jurisdiction": "India (National)",
+    "category": "Employment & Skill Development",
+    "summary": "Free nationwide job search, employment exchange registration, career counseling, and skill training programs for unemployed youth.",
+    "description": "Connects jobseekers in India with verified public and private employers, offering job matching services, skill assessment, and employment assistance.",
+    "eligibility_rules": {
+      "country": "IN",
+      "employment_status": "unemployed"
+    },
+    "document_requirements": [
+      {
+        "document_name": "Aadhaar / Voter ID",
+        "purpose": "Jobseeker identity registration",
+        "how_to_obtain": "NCS online portal registration",
+        "is_mandatory": true
+      },
+      {
+        "document_name": "Educational / Skill Certificate",
+        "purpose": "Skill matching and qualification verification",
+        "how_to_obtain": "School, college, or ITI board",
+        "is_mandatory": false
+      }
+    ],
+    "source_url": "https://www.ncs.gov.in",
+    "effective_date": "2026-01-01",
+    "last_verified": "2026-08-01"
+  },
+  {
+    "id": "SCH-IN-008",
+    "title": "National Social Assistance Programme (NSAP) Senior Pension",
+    "issuing_authority": "Ministry of Rural Development, Government of India",
+    "country": "IN",
+    "jurisdiction_level": "NATIONAL",
+    "region": null,
+    "jurisdiction": "India (National)",
+    "category": "Pensions & Senior Welfare",
+    "summary": "Monthly pension grants for BPL senior citizens, widows, and persons with severe disabilities.",
+    "description": "Provides financial security to vulnerable elderly citizens (aged 60+), widows, and disabled individuals belonging to Below Poverty Line (BPL) households.",
+    "eligibility_rules": {
+      "country": "IN",
+      "age_min": 60,
+      "is_bpl": true
+    },
+    "document_requirements": [
+      {
+        "document_name": "BPL Certificate / Ration Card",
+        "purpose": "Verify below poverty line status",
+        "how_to_obtain": "Gram Panchayat or Municipal Corporation",
+        "is_mandatory": true
+      },
+      {
+        "document_name": "Age Proof Certificate / Aadhaar",
+        "purpose": "Verify senior citizen age eligibility (60+ years)",
+        "how_to_obtain": "UIDAI center or birth certificate registrar",
+        "is_mandatory": true
+      }
+    ],
+    "source_url": "https://nsap.nic.in",
+    "effective_date": "2026-01-01",
+    "last_verified": "2026-08-01"
+  },
+  {
+    "id": "SCH-IN-009",
+    "title": "Pradhan Mantri Mudra Yojana (PMMY) Small Business Loan",
+    "issuing_authority": "Micro Units Development & Refinance Agency Ltd. (MUDRA), Govt of India",
+    "country": "IN",
+    "jurisdiction_level": "NATIONAL",
+    "region": null,
+    "jurisdiction": "India (National)",
+    "category": "Employment & Business Support",
+    "summary": "Collateral-free micro loans up to ₹10,00,000 for non-farm small businesses, micro enterprises, and self-employed entrepreneurs.",
+    "description": "Facilitates institutional credit to micro enterprises in manufacturing, trading, and services sectors under Shishu, Kishore, and Tarun categories.",
+    "eligibility_rules": {
+      "country": "IN",
+      "is_entrepreneur": true
+    },
+    "document_requirements": [
+      {
+        "document_name": "Business Plan & Identity Proof",
+        "purpose": "Loan appraisal and identity verification",
+        "how_to_obtain": "Applicant entrepreneur & bank branch",
+        "is_mandatory": true
+      }
+    ],
+    "source_url": "https://www.mudra.org.in",
+    "effective_date": "2026-01-01",
+    "last_verified": "2026-08-01"
+  },
+  {
+    "id": "SCH-IN-010",
+    "title": "Birth & Death Registration (Civil Registration System - CRS)",
+    "issuing_authority": "Office of the Registrar General & Census Commissioner, Govt of India & State Municipalities",
+    "country": "IN",
+    "jurisdiction_level": "NATIONAL",
+    "region": null,
+    "jurisdiction": "India (National / State Municipal)",
+    "category": "Civil Registration & Certificates",
+    "summary": "Official registration and issuance of official Birth Certificates and Date of Birth proof for newborns and delayed registrations.",
+    "description": "Enables parents and citizens across India to register births within 21 days for free at local municipal corporations, panchayats, or hospital registrars, and download digitally signed birth certificates.",
+    "eligibility_rules": {
+      "country": "IN"
+    },
+    "document_requirements": [
+      {
+        "document_name": "Hospital Birth Report / Discharge Slip",
+        "purpose": "Proof of birth place, date, and attending medical practitioner",
+        "how_to_obtain": "Hospital / Nursing home administration",
+        "is_mandatory": true
+      },
+      {
+        "document_name": "Parents' Aadhaar Card / ID Proof",
+        "purpose": "Verify parents' identity and permanent address",
+        "how_to_obtain": "UIDAI Portal / Election Commission",
+        "is_mandatory": true
+      },
+      {
+        "document_name": "Marriage Certificate of Parents",
+        "purpose": "Legitimacy and parentage verification",
+        "how_to_obtain": "Sub-Registrar Office (SRO) / e-District portal",
+        "is_mandatory": false
+      }
+    ],
+    "source_url": "https://crsorgi.gov.in",
+    "effective_date": "2026-01-01",
+    "last_verified": "2026-08-01"
+  },
+  {
+    "id": "SCH-IN-011",
+    "title": "State e-District Services (Income, Caste, Residence & Domicile Certificates)",
+    "issuing_authority": "Department of Revenue & General Administration, State Government",
+    "country": "IN",
+    "jurisdiction_level": "STATE",
+    "region": "Bihar",
+    "jurisdiction": "India (State e-District)",
+    "category": "Civil Registration & Certificates",
+    "summary": "Online application and verification for Income, Caste (Jati), Residence (Nivas), and Character certificates.",
+    "description": "Allows citizens to apply online via State ServicePlus / e-District portal for official revenue certificates issued by Block Development Officer (BDO) or Circle Officer (CO).",
+    "eligibility_rules": {
+      "country": "IN"
+    },
+    "document_requirements": [
+      {
+        "document_name": "Self-Declaration Form & Passport Photo",
+        "purpose": "Applicant declaration of income, caste, or residence",
+        "how_to_obtain": "State e-District portal download",
+        "is_mandatory": true
+      },
+      {
+        "document_name": "Aadhaar Card or Ration Card",
+        "purpose": "Address and identity verification",
+        "how_to_obtain": "UIDAI center / PDS office",
+        "is_mandatory": true
+      }
+    ],
+    "source_url": "https://serviceonline.bihar.gov.in",
+    "effective_date": "2026-01-01",
+    "last_verified": "2026-08-01"
+  },
+  {
+    "id": "SCH-IN-012",
+    "title": "Sarathi Parivahan Driving License & Vehicle Services",
+    "issuing_authority": "Ministry of Road Transport and Highways (MoRTH), Govt of India & State RTOs",
+    "country": "IN",
+    "jurisdiction_level": "NATIONAL",
+    "region": null,
+    "jurisdiction": "India (National / RTO)",
+    "category": "Transport & License Services",
+    "summary": "Online application for Learner's License (LL), Permanent Driving License (DL), DL renewal, and address change.",
+    "description": "Facilitates online driving license application, slot booking for RTO track test, online LL test, and issuance of chip-based Smart Card DL.",
+    "eligibility_rules": {
+      "country": "IN",
+      "age_min": 18
+    },
+    "document_requirements": [
+      {
+        "document_name": "Proof of Age (Aadhaar / Birth Certificate / 10th Marksheet)",
+        "purpose": "Verify minimum age eligibility (18+ years for LMV)",
+        "how_to_obtain": "School board / UIDAI portal",
+        "is_mandatory": true
+      },
+      {
+        "document_name": "Proof of Address & Medical Form 1A",
+        "purpose": "Verify RTO jurisdiction and medical fitness",
+        "how_to_obtain": "Registered Medical Practitioner (Doctor)",
+        "is_mandatory": true
+      }
+    ],
+    "source_url": "https://sarathi.parivahan.gov.in",
+    "effective_date": "2026-01-01",
+    "last_verified": "2026-08-01"
+  },
+  {
+    "id": "SCH-IN-013",
+    "title": "Passport Seva Online Application & Renewal (MEA)",
+    "issuing_authority": "Consular, Passport & Visa (CPV) Division, Ministry of External Affairs, Govt of India",
+    "country": "IN",
+    "jurisdiction_level": "NATIONAL",
+    "region": null,
+    "jurisdiction": "India (National)",
+    "category": "Travel & Identity Documents",
+    "summary": "Official online portal for fresh Ordinary Indian Passport, Tatkaal application, and Passport Renewal.",
+    "description": "Enables Indian citizens to register, pay online fees, schedule appointment slots at Passport Seva Kendra (PSK / POPSK), and track police verification status.",
+    "eligibility_rules": {
+      "country": "IN"
+    },
+    "document_requirements": [
+      {
+        "document_name": "Proof of Present Address (Aadhaar / Passbook / Utility Bill)",
+        "purpose": "Police verification and address printing",
+        "how_to_obtain": "Bank / UIDAI / Utility company",
+        "is_mandatory": true
+      },
+      {
+        "document_name": "Proof of Date of Birth (Birth Certificate / PAN / School Certificate)",
+        "purpose": "DOB verification",
+        "how_to_obtain": "Registrar of Births / Income Tax Department",
+        "is_mandatory": true
+      }
+    ],
+    "source_url": "https://www.passportindia.gov.in",
+    "effective_date": "2026-01-01",
+    "last_verified": "2026-08-01"
+  },
+  {
+    "id": "SCH-GOV-001",
+    "title": "FEMA Disaster Emergency Housing & Shelter Assistance",
+    "issuing_authority": "Federal Emergency Management Agency (FEMA) / DHS",
+    "country": "US",
+    "jurisdiction_level": "FEDERAL",
+    "region": null,
+    "jurisdiction": "United States (Federal)",
+    "category": "Disaster & Crisis Relief",
+    "summary": "Immediate financial assistance for temporary rental housing, home repairs, and emergency lodging following declared US natural disasters.",
+    "description": "Provides funds to individuals and families in the United States whose primary residence was destroyed or rendered uninhabitable by severe weather, floods, or natural disasters.",
+    "eligibility_rules": {
+      "country": "US",
+      "displacement": true,
+      "disaster_declared": true,
+      "primary_residence": true
+    },
+    "document_requirements": [
+      {
+        "document_name": "US Government Photo ID",
+        "purpose": "Verify identity of primary applicant",
+        "how_to_obtain": "State Licensing Bureau or Passport Agency",
+        "is_mandatory": true
+      },
+      {
+        "document_name": "Proof of US Residency or Occupancy",
+        "purpose": "Verify primary residence in declared US disaster zone",
+        "how_to_obtain": "Utility bill, lease agreement, or property tax statement",
+        "is_mandatory": true
+      }
+    ],
+    "source_url": "https://www.fema.gov/assistance/individual",
+    "effective_date": "2026-01-01",
+    "last_verified": "2026-08-01"
+  },
+  {
+    "id": "SCH-GOV-002",
+    "title": "Supplemental Nutrition Assistance Program (SNAP)",
+    "issuing_authority": "Food and Nutrition Service / USDA",
+    "country": "US",
+    "jurisdiction_level": "FEDERAL",
+    "region": null,
+    "jurisdiction": "United States (Federal)",
+    "category": "Food Security & Low-Income Assistance",
+    "summary": "Monthly Electronic Benefit Transfer (EBT) card food purchasing allowance for low-income US residents.",
+    "description": "Provides monthly food purchasing assistance to low-income households in the United States earning below 130% of federal poverty guidelines.",
+    "eligibility_rules": {
+      "country": "US",
+      "income_max": 28000,
+      "household_income_period": "annual",
+      "citizenship_or_qualifying_resident": true
+    },
+    "document_requirements": [
+      {
+        "document_name": "Proof of Income",
+        "purpose": "Verify gross monthly income threshold",
+        "how_to_obtain": "Recent pay stubs or tax statement",
+        "is_mandatory": true
+      },
+      {
+        "document_name": "Social Security Card",
+        "purpose": "Verify SSN and residency eligibility",
+        "how_to_obtain": "Social Security Administration",
+        "is_mandatory": true
+      }
+    ],
+    "source_url": "https://www.fns.usda.gov/snap/supplemental-nutrition-assistance-program",
+    "effective_date": "2026-01-01",
+    "last_verified": "2026-08-01"
+  },
+  {
+    "id": "SCH-GOV-003",
+    "title": "US Unemployment Insurance (UI) & Jobseeker Stipend",
+    "issuing_authority": "US Department of Labor / State Employment Agencies",
+    "country": "US",
+    "jurisdiction_level": "FEDERAL",
+    "region": null,
+    "jurisdiction": "United States (State/Federal)",
+    "category": "Employment & Financial Support",
+    "summary": "Weekly partial income replacement for US workers who lost employment through no fault of their own.",
+    "description": "Offers weekly financial support for up to 26 weeks while US recipients actively seek new employment.",
+    "eligibility_rules": {
+      "country": "US",
+      "employment_status": "unemployed",
+      "no_fault_separation": true
+    },
+    "document_requirements": [
+      {
+        "document_name": "Notice of Layoff / W-2",
+        "purpose": "Verify separation and earnings",
+        "how_to_obtain": "Employer HR",
+        "is_mandatory": true
+      }
+    ],
+    "source_url": "https://www.dol.gov/general/location/unemployment-benefits",
+    "effective_date": "2026-01-01",
+    "last_verified": "2026-08-01"
+  },
+  {
+    "id": "SCH-GOV-004",
+    "title": "US Low-Income Home Energy Assistance Program (LIHEAP)",
+    "issuing_authority": "Office of Community Services / HHS",
+    "country": "US",
+    "jurisdiction_level": "FEDERAL",
+    "region": null,
+    "jurisdiction": "United States (Federal)",
+    "category": "Utility & Heating Support",
+    "summary": "One-time financial grants to assist low-income US households with heating and utility bills.",
+    "description": "Helps vulnerable families and seniors in the US pay home energy bills during severe weather events.",
+    "eligibility_rules": {
+      "country": "US",
+      "income_max": 30000,
+      "household_income_period": "annual"
+    },
+    "document_requirements": [
+      {
+        "document_name": "Utility Bill",
+        "purpose": "Verify utility account status",
+        "how_to_obtain": "Power or gas company",
+        "is_mandatory": true
+      }
+    ],
+    "source_url": "https://www.acf.hhs.gov/ocs/low-income-home-energy-assistance-program-liheap",
+    "effective_date": "2026-01-01",
+    "last_verified": "2026-08-01"
+  },
+  {
+    "id": "SCH-IN-014",
+    "title": "National Food Security Act (NFSA) & PMGKAY Free Ration & Grocery Support",
+    "issuing_authority": "Department of Food & Public Distribution, Ministry of Consumer Affairs, Govt of India",
+    "country": "IN",
+    "jurisdiction_level": "NATIONAL",
+    "region": null,
+    "jurisdiction": "India (National)",
+    "category": "Food Security & Grocery Assistance",
+    "summary": "Monthly free and highly subsidized food grains (wheat, rice, pulses) and essential grocery support for low-income and vulnerable families across India.",
+    "description": "Provides 5 kg free food grains per month per person under PM-GKAY to Priority Household (PHH) and Antyodaya Anna Yojana (AAY) ration cardholders across all states in India.",
+    "eligibility_rules": {
+      "country": "IN"
+    },
+    "document_requirements": [
+      {
+        "document_name": "Ration Card (PHH / AAY / NFSA)",
+        "purpose": "Verify ration entitlement at Fair Price Shop (FPS)",
+        "how_to_obtain": "State Food & Civil Supplies portal or Block Development Office",
+        "is_mandatory": true
+      },
+      {
+        "document_name": "Aadhaar Card of Family Members",
+        "purpose": "Biometric e-POS authentication at ration shop",
+        "how_to_obtain": "UIDAI center",
+        "is_mandatory": true
+      }
+    ],
+    "source_url": "https://dfpd.gov.in",
+    "effective_date": "2026-01-01",
+    "last_verified": "2026-08-01"
+  }
+]
+

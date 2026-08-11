@@ -1,14 +1,11 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.openapi.docs import get_swagger_ui_html
-from fastapi.responses import JSONResponse
 from app.config import settings
 from app.api.v1.endpoints import health, chat, tools, services
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
-    docs_url=None,
-    openapi_url=None,
+    openapi_url=f"{settings.API_V1_STR}/openapi.json",
     description="Sahay — Public-Service & Crisis Assistance Navigator Backend"
 )
 
@@ -32,25 +29,10 @@ app.include_router(services.router, prefix=settings.API_V1_STR, tags=["Services 
 async def health_check():
     return {"status": "ok"}
 
-@app.get("/docs", include_in_schema=False)
-@app.get("/api/docs", include_in_schema=False)
-async def custom_swagger_ui_html():
-    return get_swagger_ui_html(
-        openapi_url="/api/openapi.json",
-        title=app.title + " - Swagger UI"
-    )
-
-@app.get("/openapi.json", include_in_schema=False)
-@app.get("/api/openapi.json", include_in_schema=False)
-@app.get("/api/v1/openapi.json", include_in_schema=False)
-async def custom_openapi():
-    return JSONResponse(app.openapi())
-
 @app.get("/")
-@app.get("/api")
 async def root():
     return {
         "message": "Welcome to Sahay Backend API",
         "health": "/api/health",
-        "docs": "/api/docs"
+        "docs": "/docs"
     }

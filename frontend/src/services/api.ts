@@ -4,12 +4,17 @@ const metaEnv = (import.meta as any).env || {};
 const isLocalhost = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
 
 const getBaseUrl = (): string => {
-  if (metaEnv.VITE_API_URL) {
-    return String(metaEnv.VITE_API_URL).replace(/\/$/, '');
+  if (typeof window !== 'undefined') {
+    const host = window.location.hostname;
+    // Only use local backend URL if running locally in developer environment
+    if (host === 'localhost' || host === '127.0.0.1') {
+      if (metaEnv.VITE_API_URL && !metaEnv.VITE_API_URL.includes('localhost') && !metaEnv.VITE_API_URL.includes('127.0.0.1')) {
+        return String(metaEnv.VITE_API_URL).replace(/\/$/, '');
+      }
+      return 'http://localhost:8002';
+    }
   }
-  if (isLocalhost || metaEnv.DEV) {
-    return 'http://localhost:8002';
-  }
+  // In production (Vercel Cloud or public domain), ALWAYS use same-origin relative paths
   return '';
 };
 
@@ -35,7 +40,7 @@ export async function sendChatQuery(
     });
 
     if (!response.ok) {
-      let detail = `Server error ${response.status}`;
+      let detail = `Server returned HTTP ${response.status}`;
       try {
         const errJson = await response.json();
         detail = errJson.detail || errJson.message || detail;
@@ -48,7 +53,7 @@ export async function sendChatQuery(
     return await response.json();
   } catch (err: any) {
     if (err.name === 'TypeError' || err.message?.includes('fetch') || err.message?.includes('Failed to fetch')) {
-      throw new Error(`Unable to connect to Sahay backend. Please ensure the backend server is running on ${BASE_URL} and try again.`);
+      throw new Error(`Network connection error to Sahay backend at ${API_BASE}/chat. Please check your network connection and try again.`);
     }
     throw err;
   }
@@ -56,7 +61,8 @@ export async function sendChatQuery(
 
 export async function checkHealth(): Promise<boolean> {
   try {
-    const res = await fetch(`${BASE_URL}/health`);
+    const healthUrl = BASE_URL ? `${BASE_URL}/api/health` : '/api/health';
+    const res = await fetch(healthUrl);
     if (res.ok) {
       const data = await res.json();
       return data.status === 'ok' || data.status === 'healthy';
