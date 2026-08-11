@@ -100,3 +100,10 @@ desktop.ini
 *.zip
 *.tar
 *.tar.gz
+
+# ==============================
+# INTERNAL PRESENTATION & DEMO MATERIAL
+# ==============================
+docs/demo-script.md
+docs/presentation_deck.md
+docs/submission_checklist.md
