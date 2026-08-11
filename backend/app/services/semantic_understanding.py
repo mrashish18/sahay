@@ -84,7 +84,52 @@ class SemanticUnderstandingEngine:
         r"\b(document|documents|documnts|docs|paperwork|proof)\b"
     ]
 
-    KNOWN_CITIES = ["patna", "gaya", "supaul", "muzaffarpur", "bhagalpur", "delhi", "mumbai", "kolkata", "chennai", "bengaluru", "new york", "london"]
+    KNOWN_CITIES = [
+        "triveniganj", "triveni ganj", "supaul", "patna", "gaya", "muzaffarpur", "bhagalpur",
+        "darbhanga", "purnia", "madhubani", "saharsa", "araria", "kishanganj", "madhepura",
+        "sitamarhi", "bettiah", "munger", "buxar", "sasaram", "siwan", "gopalganj",
+        "katihar", "begusarai", "nalanda", "rajgir", "nawada", "jamui", "khagaria",
+        "vaishali", "hajipur", "samastipur", "chhapra", "motihari", "rohtas",
+        "delhi", "mumbai", "kolkata", "chennai", "bengaluru", "hyderabad", "pune",
+        "jaipur", "ahmedabad", "lucknow", "chandigarh", "shimla", "new york", "london"
+    ]
+
+    def extract_location_from_text(self, text: str) -> Optional[str]:
+        text_raw = text.strip()
+        text_lower = text_raw.lower()
+
+        # 1. Check known cities / towns / districts list first
+        for c in self.KNOWN_CITIES:
+            if c in text_lower:
+                if c in ["triveniganj", "triveni ganj"]:
+                    return "Triveniganj"
+                return c.capitalize()
+
+        # 2. Regex preposition matching: "in <place>", "for <place>", "about <place>", "near <place>"
+        prep_match = re.search(r"\b(?:in|at|for|near|around|about|what about|how about)\s+([a-zA-Z\s\-]+)", text_raw, re.IGNORECASE)
+        if prep_match:
+            candidate = prep_match.group(1).strip()
+            stop_words = [
+                "the", "a", "an", "some", "any", "every", "all", "in", "at", "for", "near", "around", "about",
+                "tomorrow", "today", "tonight", "yesterday", "evening", "morning", "afternoon",
+                "night", "raat", "subah", "dopahar", "shaam", "kal", "aaj", "please", "help",
+                "hogi", "hoga", "hain", "hai", "kaisa", "kaisi", "kya", "batao", "bataiye", "weather", "rain",
+                "it", "this", "that", "them", "him", "her", "me", "us", "you", "which", "what", "my", "your",
+                "our", "their", "who", "whom", "whose", "info", "information", "details", "scheme", "program",
+                "support", "assistance", "food", "ration", "housing", "health", "card", "job", "work"
+            ]
+            clean_words = []
+            for w in candidate.split():
+                if w.lower() in stop_words:
+                    break
+                clean_words.append(w)
+            if clean_words:
+                loc = " ".join(clean_words).strip("?,.!")
+                if loc and len(loc) >= 3 and not any(w in loc.lower() for w in ["weather", "rain", "forecast", "temp", "mausam"]):
+                    if loc.lower() not in ["us", "usa", "united states", "india", "bihar", "uk", "it", "this", "that"]:
+                        return loc.title()
+
+        return None
 
     def understand_and_normalize(
         self,
@@ -197,11 +242,7 @@ class SemanticUnderstandingEngine:
         is_explicit_weather = any(re.search(pat, text_lower) for pat in self.WEATHER_PATTERNS)
 
         if is_explicit_weather:
-            explicit_city_in_msg = None
-            for c in self.KNOWN_CITIES:
-                if c in text_lower:
-                    explicit_city_in_msg = c.capitalize()
-                    break
+            explicit_city_in_msg = self.extract_location_from_text(text_raw)
 
             city = explicit_city_in_msg
             if not city and active_topic == "WEATHER" and active_location:
@@ -295,98 +336,73 @@ class SemanticUnderstandingEngine:
                 domain="WEATHER"
             )
 
-        # Weather Time-Period Follow-Up ("what about evening?", "and at night?", "what about morning?", "aur raat me")
-        if any(w in text_lower for w in ["evening", "night", "morning", "afternoon", "shaam", "raat", "subah", "dopahar", "overnight"]):
-            is_weather_topic = (
-                (active_topic == "WEATHER") or
-                any(c in text_lower for c in self.KNOWN_CITIES) or
-                ("weather" in last_bot_msg or "rain" in last_bot_msg or "forecast" in last_bot_msg)
+        # Weather Follow-Up ("what about tomorrow?", "what about evening?", "how about Supaul?", "and at night?", "aur raat me")
+        is_weather_followup = (
+            (active_topic == "WEATHER" or "weather" in last_bot_msg or "rain" in last_bot_msg or "forecast" in last_bot_msg) and
+            (
+                any(w in text_lower for w in ["tomorrow", "today", "tonight", "kal", "evening", "night", "morning", "afternoon", "shaam", "raat", "subah", "dopahar", "overnight"]) or
+                bool(self.extract_location_from_text(text_raw)) or
+                text_lower.startswith(("what about", "how about", "and in", "aur"))
             )
-            
-            if is_weather_topic:
-                city = None
-                for c in self.KNOWN_CITIES:
-                    if c in text_lower:
-                        city = c.capitalize()
+        )
+
+        if is_weather_followup:
+            city = self.extract_location_from_text(text_raw)
+            if not city:
+                city = active_location
+            if not city:
+                for msg in [last_user_msg, last_bot_msg]:
+                    c_found = self.extract_location_from_text(msg)
+                    if c_found:
+                        city = c_found
                         break
-                if not city:
-                    city = active_location
-                if not city:
-                    for c in self.KNOWN_CITIES:
-                        if c in last_user_msg or c in last_bot_msg:
-                            city = c.capitalize()
-                            break
-                city = city or "Patna"
+            city = city or "Patna"
 
-                time_period = None
-                if "night" in text_lower or "raat" in text_lower or "overnight" in text_lower:
-                    time_period = "night"
-                elif "morning" in text_lower or "subah" in text_lower:
-                    time_period = "morning"
-                elif "afternoon" in text_lower or "dopahar" in text_lower:
-                    time_period = "afternoon"
-                elif "evening" in text_lower or "shaam" in text_lower:
-                    time_period = "evening"
-                else:
-                    time_period = getattr(session, "time_period", None) or "evening"
+            time_period = None
+            if "night" in text_lower or "raat" in text_lower or "overnight" in text_lower:
+                time_period = "night"
+            elif "morning" in text_lower or "subah" in text_lower:
+                time_period = "morning"
+            elif "afternoon" in text_lower or "dopahar" in text_lower:
+                time_period = "afternoon"
+            elif "evening" in text_lower or "shaam" in text_lower:
+                time_period = "evening"
+            else:
+                time_period = getattr(session, "time_period", None)
 
-                if session:
-                    session.update_context(
-                        active_topic="WEATHER",
-                        active_intent="WEATHER",
-                        active_domain="WEATHER",
-                        location=city,
-                        time_period=time_period,
-                        date_reference="tomorrow"
-                    )
-
-                norm_query = f"What will the weather be like tomorrow {time_period} in {city}?"
-                urgency = Urgency(level=UrgencyLevel.INFORMATIONAL, score=0.20, reasoning="Weather time-period follow-up query.")
-                return SemanticQueryResult(
-                    raw_query=text_raw,
-                    normalized_query=norm_query,
-                    flow=FlowType.WEB_SEARCH_REQUIRED,
-                    primary_intent="WEATHER",
-                    secondary_intents=[],
-                    confidence=0.98,
-                    entities={"location": city, "city": city, "time": "tomorrow", "time_period": time_period},
-                    urgency=urgency,
-                    missing_information=[],
-                    temporal_requirement="CURRENT",
-                    domain="WEATHER"
-                )
-            elif not any(re.search(pat, text_lower) for pat in self.WEATHER_PATTERNS) and not any(c in text_lower for c in self.KNOWN_CITIES) and not any(re.search(pat, text_lower) for pat in self.PUBLIC_SERVICE_PATTERNS):
-                # Ambiguous follow-up without active weather topic (e.g. after "what is Python?")
-                urgency = Urgency(level=UrgencyLevel.NORMAL, score=0.20, reasoning="Generic follow-up without active domain context.")
-                clarification = "Sure — evening for what? If you mean the weather, tell me the city."
-                if session:
-                    session.set_pending(intent="WEATHER", clarification="city", entities={"time_period": "evening"})
-
-                return SemanticQueryResult(
-                    raw_query=text_raw,
-                    normalized_query=clarification,
-                    flow=FlowType.AMBIGUOUS,
-                    primary_intent="AMBIGUOUS",
-                    secondary_intents=[],
-                    confidence=0.30,
-                    entities={},
-                    urgency=urgency,
-                    missing_information=[
-                        MissingInfoItem(
-                            field="followup_context",
-                            question=clarification,
-                            importance="high"
-                        )
-                    ],
-                    temporal_requirement="NONE",
-                    domain="GENERAL"
+            if session:
+                session.update_context(
+                    active_topic="WEATHER",
+                    active_intent="WEATHER",
+                    active_domain="WEATHER",
+                    location=city,
+                    time_period=time_period,
+                    date_reference="tomorrow"
                 )
 
-        # Single-Word City Follow-Up ("Patna", "Delhi") after weather query or clarification
-        if text_lower in self.KNOWN_CITIES or (len(text_lower.split()) <= 2 and any(c in text_lower for c in self.KNOWN_CITIES)):
+            period_str = f" {time_period}" if time_period else ""
+            norm_query = f"What will the weather be like tomorrow{period_str} in {city}?"
+            urgency = Urgency(level=UrgencyLevel.INFORMATIONAL, score=0.20, reasoning="Weather follow-up query.")
+            return SemanticQueryResult(
+                raw_query=text_raw,
+                normalized_query=norm_query,
+                flow=FlowType.WEB_SEARCH_REQUIRED,
+                primary_intent="WEATHER",
+                secondary_intents=[],
+                confidence=0.98,
+                entities={"location": city, "city": city, "time": "tomorrow", "time_period": time_period},
+                urgency=urgency,
+                missing_information=[],
+                temporal_requirement="CURRENT",
+                domain="WEATHER"
+            )
+
+        # Single-Word or Short City Follow-Up ("Patna", "Delhi", "Supaul") after weather query or clarification
+        extracted_city = self.extract_location_from_text(text_raw)
+        if extracted_city or text_lower in self.KNOWN_CITIES or (len(text_lower.split()) <= 2 and not any(w in text_lower for w in ["what", "how", "why", "when", "who"])):
             is_weather_context = (active_topic == "WEATHER") or ("weather" in last_bot_msg or "rain" in last_bot_msg or "city" in last_bot_msg)
             if is_weather_context:
-                city = text_raw.capitalize()
+                city = extracted_city or text_raw.capitalize()
                 time_period = getattr(session, "time_period", None) or "evening"
                 if session:
                     session.clear_pending()

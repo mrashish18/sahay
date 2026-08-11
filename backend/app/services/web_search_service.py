@@ -1,4 +1,5 @@
 import json
+import re
 import urllib.request
 import urllib.parse
 from typing import Dict, Any, Tuple, List, Optional
@@ -48,13 +49,30 @@ class WebSearchService:
             city = user_context.get("city")
             if not city:
                 known_cities = [
-                    "patna", "gaya", "supaul", "muzaffarpur", "bhagalpur", "darbhanga", "purnia",
-                    "delhi", "mumbai", "kolkata", "chennai", "bengaluru", "hyderabad", "new york", "london"
+                    "triveniganj", "triveni ganj", "supaul", "patna", "gaya", "muzaffarpur", "bhagalpur",
+                    "darbhanga", "purnia", "madhubani", "saharsa", "araria", "kishanganj", "madhepura",
+                    "sitamarhi", "bettiah", "munger", "buxar", "sasaram", "siwan", "gopalganj",
+                    "katihar", "begusarai", "delhi", "mumbai", "kolkata", "chennai", "bengaluru",
+                    "hyderabad", "jaipur", "pune", "ahmedabad", "lucknow", "chandigarh", "shimla", "new york", "london"
                 ]
                 for c in known_cities:
                     if c in text_lower:
-                        city = c.capitalize()
+                        if c in ["triveniganj", "triveni ganj"]:
+                            city = "Triveniganj"
+                        else:
+                            city = c.capitalize()
                         break
+
+            if not city:
+                prep_match = re.search(r"\b(?:in|at|for|near|around|about|what about|how about)\s+([a-zA-Z\s\-]+)", query, re.IGNORECASE)
+                if prep_match:
+                    candidate = prep_match.group(1).strip()
+                    stop_words = ["tomorrow", "today", "tonight", "yesterday", "evening", "morning", "afternoon", "night", "raat", "subah", "dopahar", "shaam", "kal", "aaj", "please", "help", "weather", "rain"]
+                    clean_words = [w for w in candidate.split() if w.lower() not in stop_words]
+                    if clean_words:
+                        loc = " ".join(clean_words).strip("?,.!")
+                        if loc and len(loc) >= 3 and not any(w in loc.lower() for w in ["weather", "rain", "forecast", "temp"]):
+                            city = loc.title()
 
             state = user_context.get("state", "Bihar")
 
@@ -84,10 +102,18 @@ class WebSearchService:
                     "Patna": (25.5941, 85.1376),
                     "Gaya": (24.7914, 85.0002),
                     "Supaul": (26.1260, 86.6053),
+                    "Triveniganj": (26.1550, 86.8047),
                     "Muzaffarpur": (26.1209, 85.3647),
                     "Bhagalpur": (25.2425, 87.0139),
+                    "Darbhanga": (26.1542, 85.8918),
+                    "Purnia": (25.7771, 87.4753),
+                    "Saharsa": (25.8833, 86.6000),
                     "Delhi": (28.6139, 77.2090),
-                    "Mumbai": (19.0760, 72.8777)
+                    "Mumbai": (19.0760, 72.8777),
+                    "Kolkata": (22.5726, 88.3639),
+                    "Chennai": (13.0827, 80.2707),
+                    "Bengaluru": (12.9716, 77.5946),
+                    "Hyderabad": (17.3850, 78.4867)
                 }
                 
                 if geo_data.get("results"):
