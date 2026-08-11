@@ -10,6 +10,9 @@ const getBaseUrl = (): string => {
   if (isLocalhost || metaEnv.DEV) {
     return 'http://localhost:8002';
   }
+  if (typeof window !== 'undefined' && window.location.origin) {
+    return window.location.origin;
+  }
   return '';
 };
 
@@ -21,9 +24,6 @@ export async function sendChatQuery(
   context: Record<string, any> = {},
   conversationId?: string
 ): Promise<SahayResponse> {
-  if (!BASE_URL && !isLocalhost) {
-    throw new Error('Frontend is deployed, but the FastAPI backend does not currently have a verified public deployment.');
-  }
   try {
     const response = await fetch(`${API_BASE}/chat`, {
       method: 'POST',
