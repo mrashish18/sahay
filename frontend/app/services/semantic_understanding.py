@@ -98,19 +98,78 @@ class SemanticUnderstandingEngine:
         "jaipur", "ahmedabad", "lucknow", "chandigarh", "shimla", "new york", "london"
     ]
 
+    LOCATION_ALIASES: Dict[str, str] = {
+        "up": "Uttar Pradesh",
+        "u.p.": "Uttar Pradesh",
+        "mp": "Madhya Pradesh",
+        "m.p.": "Madhya Pradesh",
+        "wb": "West Bengal",
+        "w.b.": "West Bengal",
+        "tn": "Tamil Nadu",
+        "t.n.": "Tamil Nadu",
+        "dl": "Delhi",
+        "d.l.": "Delhi",
+        "jk": "Jammu and Kashmir",
+        "j.k.": "Jammu and Kashmir",
+        "ap": "Andhra Pradesh",
+        "a.p.": "Andhra Pradesh",
+        "hp": "Himachal Pradesh",
+        "h.p.": "Himachal Pradesh",
+        "uk": "Uttarakhand",
+        "u.k.": "Uttarakhand",
+        "pb": "Punjab",
+        "p.b.": "Punjab",
+        "rj": "Rajasthan",
+        "r.j.": "Rajasthan",
+        "madras": "Chennai",
+        "bombay": "Mumbai",
+        "calcutta": "Kolkata",
+        "bangalore": "Bengaluru",
+        "poona": "Pune",
+        "darbhangha": "Darbhanga",
+        "bengluru": "Bengaluru",
+        "mumbay": "Mumbai",
+        "trivianganj": "Triveniganj",
+        "triveni ganj": "Triveniganj",
+        "triveniganj": "Triveniganj"
+    }
+
     def extract_location_from_text(self, text: str) -> Optional[str]:
         text_raw = text.strip()
         text_lower = text_raw.lower()
 
-        # 1. Check known cities / towns / districts list first
+        # 1. Composite / Qualified location (e.g. "madras, oregon" or "madras oregon")
+        qualifier_match = re.search(r"\b([a-zA-Z\s]+)\s*,\s*([a-zA-Z\s]+)\b", text_raw)
+        if qualifier_match:
+            loc_part = qualifier_match.group(1).strip()
+            state_country_part = qualifier_match.group(2).strip()
+            loc_words = loc_part.split()
+            stop_words_qual = ["will", "day", "after", "tomorrow", "today", "yesterday", "rain", "in", "at", "for", "weather", "forecast", "temp", "mausam"]
+            clean_loc = [w for w in loc_words if w.lower() not in stop_words_qual]
+            if clean_loc:
+                target_city = " ".join(clean_loc).title()
+                if state_country_part.lower() not in ["india", "bihar"] and len(state_country_part) >= 2:
+                    return f"{target_city}, {state_country_part.title()}"
+
+        # 2. Check alias / state abbreviation matching
+        for alias_key, normalized_val in self.LOCATION_ALIASES.items():
+            pattern = r"\b" + re.escape(alias_key) + r"\b"
+            if re.search(pattern, text_lower):
+                if alias_key in ["up", "uk"]:
+                    if re.search(r"\b(?:in|at|for|near|around|about|of|weather|rain|forecast|temp|mausam)\s+" + re.escape(alias_key) + r"\b", text_lower) or re.search(r"\b" + re.escape(alias_key.upper()) + r"\b", text_raw):
+                        return normalized_val
+                else:
+                    return normalized_val
+
+        # 3. Known cities matching
         for c in self.KNOWN_CITIES:
-            if c in text_lower:
+            if re.search(r"\b" + re.escape(c) + r"\b", text_lower):
                 if c in ["triveniganj", "triveni ganj"]:
                     return "Triveniganj"
                 return c.capitalize()
 
-        # 2. Regex preposition matching: "in <place>", "for <place>", "about <place>", "near <place>"
-        prep_match = re.search(r"\b(?:in|at|for|near|around|about|what about|how about)\s+([a-zA-Z\s\-]+)", text_raw, re.IGNORECASE)
+        # 4. Preposition matching: "in <place>", "at <place>", "for <place>", "near <place>", "around <place>", "about <place>"
+        prep_match = re.search(r"\b(?:in|at|for|near|around|about|what about|how about)\s+([a-zA-Z0-9\s\-,]+)", text_raw, re.IGNORECASE)
         if prep_match:
             candidate = prep_match.group(1).strip()
             stop_words = [
@@ -129,8 +188,11 @@ class SemanticUnderstandingEngine:
                 clean_words.append(w)
             if clean_words:
                 loc = " ".join(clean_words).strip("?,.!")
-                if loc and len(loc) >= 3 and not any(w in loc.lower() for w in ["weather", "rain", "forecast", "temp", "mausam"]):
-                    if loc.lower() not in ["us", "usa", "united states", "india", "bihar", "uk", "it", "this", "that", "there", "here", "where"]:
+                if loc and len(loc) >= 2 and not any(w in loc.lower() for w in ["weather", "rain", "forecast", "temp", "mausam"]):
+                    if loc.lower() not in ["it", "this", "that", "there", "here", "where"]:
+                        loc_lower = loc.lower()
+                        if loc_lower in self.LOCATION_ALIASES:
+                            return self.LOCATION_ALIASES[loc_lower]
                         return loc.title()
 
         return None
@@ -405,7 +467,15 @@ class SemanticUnderstandingEngine:
             )
 
         # Weather Follow-Up ("what about tomorrow?", "what about evening?", "how about Supaul?", "and at night?", "aur raat me")
+        is_public_service_query = (
+            any(re.search(pat, text_lower) for pat in self.PUBLIC_SERVICE_PATTERNS) or
+            any(re.search(pat, text_lower) for pat in self.FOOD_PATTERNS) or
+            any(re.search(pat, text_lower) for pat in self.ELIGIBILITY_PATTERNS) or
+            "scheme" in text_lower or "assistance" in text_lower
+        )
+
         is_weather_followup = (
+            not is_public_service_query and
             (active_topic == "WEATHER" or "weather" in last_bot_msg or "rain" in last_bot_msg or "forecast" in last_bot_msg) and
             (
                 any(w in text_lower for w in ["tomorrow", "today", "tonight", "kal", "evening", "night", "morning", "afternoon", "shaam", "raat", "subah", "dopahar", "overnight"]) or
@@ -481,7 +551,7 @@ class SemanticUnderstandingEngine:
 
         # Single-Word or Short City Follow-Up ("Patna", "Delhi", "Supaul") after weather query or clarification
         extracted_city = self.extract_location_from_text(text_raw)
-        if extracted_city or text_lower in self.KNOWN_CITIES or (len(text_lower.split()) <= 2 and not any(w in text_lower for w in ["what", "how", "why", "when", "who"])):
+        if not is_public_service_query and (extracted_city or text_lower in self.KNOWN_CITIES or (len(text_lower.split()) <= 2 and not any(w in text_lower for w in ["what", "how", "why", "when", "who"]))):
             is_weather_context = (active_topic == "WEATHER") or ("weather" in last_bot_msg or "rain" in last_bot_msg or "city" in last_bot_msg)
             if is_weather_context:
                 city = extracted_city or text_raw.capitalize()
@@ -771,8 +841,13 @@ class SemanticUnderstandingEngine:
             if session:
                 session.reset_topic("PUBLIC_SERVICE", new_domain="PUBLIC_SERVICE")
 
+            extracted_country = "US" if any(w in text_lower for w in ["in the us", "in us", "in usa", "united states"]) else ("IN" if "bihar" in text_lower or "delhi" in text_lower or "india" in text_lower else user_context.get("country", getattr(session, "country", "IN")))
+            extracted_state = "Bihar" if "bihar" in text_lower else ("Delhi" if "delhi" in text_lower else user_context.get("state"))
+            if session and ("bihar" in text_lower or "delhi" in text_lower or "us" in text_lower):
+                session.update_context(country=extracted_country, state=extracted_state)
+
             missing_info = []
-            if "state" not in user_context and "location" not in user_context:
+            if not extracted_state and extracted_country == "IN" and "state" not in user_context and "location" not in user_context:
                 missing_info.append(
                     MissingInfoItem(
                         field="location",
@@ -788,7 +863,7 @@ class SemanticUnderstandingEngine:
                 primary_intent="GENERAL_PUBLIC_SERVICE",
                 secondary_intents=[],
                 confidence=0.90,
-                entities={"country": user_context.get("country", "IN"), "state": user_context.get("state")},
+                entities={"country": extracted_country, "state": extracted_state},
                 urgency=Urgency(level=UrgencyLevel.NORMAL, score=0.30, reasoning="General public service inquiry."),
                 missing_information=missing_info,
                 temporal_requirement="NONE",

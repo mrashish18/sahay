@@ -2,8 +2,11 @@ import json
 import re
 import urllib.request
 import urllib.parse
+import logging
 from typing import Dict, Any, Tuple, List, Optional
 from app.models.schemas import SourceItem, MissingInfoItem
+
+logger = logging.getLogger(__name__)
 
 WMO_WEATHER_CODES: Dict[int, str] = {
     0: "Clear sky ☀️",
@@ -26,11 +29,61 @@ WMO_WEATHER_CODES: Dict[int, str] = {
     99: "Thunderstorm with heavy hail ⛈️",
 }
 
+def get_location_header(resolved_city: str, resolved_admin: str, country_name: str, entity_type: str) -> str:
+    city_lower = resolved_city.lower()
+    state_names = {
+        "uttar pradesh": ("Uttar Pradesh", "Lucknow"),
+        "up": ("Uttar Pradesh", "Lucknow"),
+        "bihar": ("Bihar", "Patna"),
+        "madhya pradesh": ("Madhya Pradesh", "Bhopal"),
+        "mp": ("Madhya Pradesh", "Bhopal"),
+        "west bengal": ("West Bengal", "Kolkata"),
+        "wb": ("West Bengal", "Kolkata"),
+        "tamil nadu": ("Tamil Nadu", "Chennai"),
+        "tn": ("Tamil Nadu", "Chennai"),
+        "maharashtra": ("Maharashtra", "Mumbai"),
+        "karnataka": ("Karnataka", "Bengaluru"),
+        "rajasthan": ("Rajasthan", "Jaipur"),
+        "punjab": ("Punjab", "Chandigarh"),
+        "haryana": ("Haryana", "Chandigarh"),
+        "delhi": ("Delhi", "New Delhi"),
+        "dl": ("Delhi", "New Delhi"),
+        "jammu and kashmir": ("Jammu and Kashmir", "Srinagar"),
+        "jk": ("Jammu and Kashmir", "Srinagar"),
+        "gujarat": ("Gujarat", "Gandhinagar"),
+        "kerala": ("Kerala", "Thiruvananthapuram"),
+        "andhra pradesh": ("Andhra Pradesh", "Amaravati"),
+        "telangana": ("Telangana", "Hyderabad"),
+        "odisha": ("Odisha", "Bhubaneswar"),
+        "assam": ("Assam", "Dispur")
+    }
+
+    if entity_type in ["STATE", "UNION_TERRITORY"] or city_lower in state_names:
+        state_info = state_names.get(city_lower)
+        if state_info:
+            canonical_state, capital = state_info
+        else:
+            canonical_state = resolved_city
+            capital = "Lucknow" if "uttar pradesh" in city_lower else "regional capital"
+        return f"Representative forecast for {canonical_state} ({capital} region)"
+
+    # City / District / Local location
+    if country_name and country_name.lower() in ["united states", "usa", "us"]:
+        if resolved_admin and resolved_admin.lower() != resolved_city.lower():
+            return f"in {resolved_city}, {resolved_admin}, USA"
+        return f"in {resolved_city}, USA"
+
+    if resolved_admin and resolved_admin.lower() != resolved_city.lower() and resolved_admin.lower() not in ["india", "in"]:
+        return f"in {resolved_city}, {resolved_admin}"
+
+    return f"in {resolved_city}"
+
+
 class WebSearchService:
     """
     Real-time Live Weather & Web Search Integration Service.
-    Integrates Open-Meteo Weather Forecast API (NO API KEY REQUIRED) with Hourly & Time-Period Support,
-    and Open-Meteo Geocoding API for global city resolution.
+    Integrates Open-Meteo Weather Forecast API with Hourly & Time-Period Support,
+    and Open-Meteo Geocoding API for global entity resolution and candidate ranking.
     """
 
     def process_web_or_weather_query(
@@ -45,7 +98,7 @@ class WebSearchService:
         # 1. WEATHER QUERY ROUTING
         if "weather" in text_lower or "rain" in text_lower or "forecast" in text_lower or "temp" in text_lower or "evening" in text_lower or "morning" in text_lower or "afternoon" in text_lower or "night" in text_lower or time_period or location or date_reference:
             
-            # Detect target city
+            # Detect target city/location
             # PRECEDENCE:
             # 1. Explicit location parameter (from semantic router / current turn)
             # 2. Explicit city in query text
@@ -60,7 +113,7 @@ class WebSearchService:
                     "hyderabad", "jaipur", "pune", "ahmedabad", "lucknow", "chandigarh", "shimla", "new york", "london"
                 ]
                 for c in known_cities:
-                    if c in text_lower:
+                    if re.search(r"\b" + re.escape(c) + r"\b", text_lower):
                         if c in ["triveniganj", "triveni ganj"]:
                             city = "Triveniganj"
                         else:
@@ -68,25 +121,42 @@ class WebSearchService:
                         break
 
             if not city:
-                prep_match = re.search(r"\b(?:in|at|for|near|around|about|what about|how about)\s+([a-zA-Z\s\-]+)", query, re.IGNORECASE)
+                prep_match = re.search(r"\b(?:in|at|for|near|around|about|what about|how about)\s+([a-zA-Z0-9\s\-]+)", query, re.IGNORECASE)
                 if prep_match:
                     candidate = prep_match.group(1).strip()
                     stop_words = ["tomorrow", "today", "tonight", "yesterday", "evening", "morning", "afternoon", "night", "raat", "subah", "dopahar", "shaam", "kal", "aaj", "please", "help", "weather", "rain"]
                     clean_words = [w for w in candidate.split() if w.lower() not in stop_words]
                     if clean_words:
                         loc = " ".join(clean_words).strip("?,.!")
-                        if loc and len(loc) >= 3 and not any(w in loc.lower() for w in ["weather", "rain", "forecast", "temp"]):
+                        if loc and len(loc) >= 2 and not any(w in loc.lower() for w in ["weather", "rain", "forecast", "temp"]):
                             city = loc.title()
 
             if not city:
                 city = user_context.get("city")
 
+            if city:
+                has_us_qualifier = any(kw in text_lower for kw in ["us", "usa", "united states", "oregon", "california", "texas", "ny", "new york"])
+                city_clean = city.lower().strip()
+                LOCATION_ALIASES = {
+                    "up": "Uttar Pradesh", "uttar pradesh": "Uttar Pradesh",
+                    "mp": "Madhya Pradesh", "madhya pradesh": "Madhya Pradesh",
+                    "wb": "West Bengal", "west bengal": "West Bengal",
+                    "tn": "Tamil Nadu", "tamil nadu": "Tamil Nadu",
+                    "dl": "Delhi", "delhi": "Delhi",
+                    "jk": "Jammu and Kashmir", "jammu and kashmir": "Jammu and Kashmir",
+                    "ap": "Andhra Pradesh", "andhra pradesh": "Andhra Pradesh",
+                    "hp": "Himachal Pradesh", "himachal pradesh": "Himachal Pradesh",
+                    "uk": "Uttarakhand", "uttarakhand": "Uttarakhand",
+                    "pb": "Punjab", "punjab": "Punjab",
+                    "rj": "Rajasthan", "rajasthan": "Rajasthan",
+                    "madras": "Chennai", "bombay": "Mumbai", "calcutta": "Kolkata",
+                    "bangalore": "Bengaluru", "poona": "Pune",
+                    "darbhangha": "Darbhanga", "bengluru": "Bengaluru", "mumbay": "Mumbai"
+                }
+                if not has_us_qualifier and city_clean in LOCATION_ALIASES:
+                    city = LOCATION_ALIASES[city_clean]
+
             # Detect date reference
-            # PRECEDENCE FOR DATE REFERENCE:
-            # 1. Explicit date_reference argument (from semantic router / current turn)
-            # 2. Extracted date keyword from query text ("today", "aaj", "tonight", "tomorrow", "day after tomorrow", "yesterday", etc.)
-            # 3. user_context.get("date_reference") or user_context.get("date")
-            # 4. Default: "tomorrow"
             date_ref = date_reference
             if not date_ref:
                 if re.search(r"\b(?:day\s+after\s+tomorrow|day-after-tomorrow|parson|parso)\b", text_lower):
@@ -102,13 +172,24 @@ class WebSearchService:
             if not date_ref:
                 date_ref = user_context.get("date_reference") or user_context.get("date") or "tomorrow"
 
-            state = user_context.get("state", "Bihar")
+            DATE_REF_MAP = {
+                "today": (0, 0, "Today"),
+                "tomorrow": (1, 1, "Tomorrow"),
+                "day_after_tomorrow": (2, 2, "Day after tomorrow"),
+                "yesterday": (-1, 0, "Yesterday"),
+                "day_before_yesterday": (-2, 0, "Day before yesterday")
+            }
+            norm_ref = date_ref.lower().replace("-", "_").replace(" ", "_") if date_ref else "tomorrow"
+            day_offset, default_idx, date_title = DATE_REF_MAP.get(norm_ref, (1, 1, "Tomorrow"))
+
+            state = user_context.get("state")
 
             # If city is missing and only state (e.g. Bihar) is known: ask for city!
             if not city:
+                disp_state = state or "Bihar"
                 disp_ref = date_ref.replace("_", " ")
                 period_label = f"{disp_ref} {time_period}'s" if time_period else f"{disp_ref}'s"
-                summary = f"Which city in {state} should I check for {period_label} weather forecast?"
+                summary = f"Which city in {disp_state} should I check for {period_label} weather forecast?"
                 missing_info = [
                     MissingInfoItem(
                         field="city",
@@ -118,56 +199,150 @@ class WebSearchService:
                 ]
                 return summary, sources, missing_info, None
 
-            # Perform Geocoding via Open-Meteo Geocoding API
+            # Perform Geocoding via Open-Meteo Geocoding API with candidate collection & ranking
+            lat, lon = None, None
+            resolved_city, resolved_admin, country_name = city, state or "", "India"
+            entity_type = "CITY"
+
             try:
                 encoded_city = urllib.parse.quote(city)
-                geo_url = f"https://geocoding-api.open-meteo.com/v1/search?name={encoded_city}&count=1&language=en&format=json"
+                geo_url = f"https://geocoding-api.open-meteo.com/v1/search?name={encoded_city}&count=10&language=en&format=json"
                 req = urllib.request.Request(geo_url, headers={"User-Agent": "Sahay-WeatherApp/1.0"})
                 
+                geo_results = []
                 with urllib.request.urlopen(req, timeout=5.0) as resp:
                     geo_data = json.loads(resp.read().decode("utf-8"))
+                    geo_results = geo_data.get("results", [])
 
-                results = geo_data.get("results", [])
-                if results:
-                    first_match = results[0]
-                    lat = first_match["latitude"]
-                    lon = first_match["longitude"]
-                    resolved_city = first_match.get("name", city)
-                    resolved_admin = first_match.get("admin1") or first_match.get("country", "")
-                    country_name = first_match.get("country", "India")
+                # Retry with fuzzy/normalized spelling if 0 results
+                if not geo_results:
+                    fuzzy_norm = city.lower().replace("h", "").replace("aa", "a").replace("ee", "i")
+                    if fuzzy_norm != city.lower():
+                        encoded_fuzzy = urllib.parse.quote(fuzzy_norm)
+                        geo_url_f = f"https://geocoding-api.open-meteo.com/v1/search?name={encoded_fuzzy}&count=10&language=en&format=json"
+                        req_f = urllib.request.Request(geo_url_f, headers={"User-Agent": "Sahay-WeatherApp/1.0"})
+                        with urllib.request.urlopen(req_f, timeout=5.0) as resp_f:
+                            geo_data_f = json.loads(resp_f.read().decode("utf-8"))
+                            geo_results = geo_data_f.get("results", [])
+
+                if geo_results:
+                    # Candidate Ranking Algorithm
+                    user_country = (user_context.get("country") or "IN").upper()
+                    has_us_qualifier = any(kw in text_lower for kw in ["us", "usa", "united states", "oregon", "california", "texas", "ny", "new york"])
+
+                    scored_candidates = []
+                    for cand in geo_results:
+                        score = 0
+                        cand_name = cand.get("name", "").lower()
+                        cand_cc = cand.get("country_code", "").upper()
+                        cand_admin1 = (cand.get("admin1") or "").lower()
+                        fcode = cand.get("feature_code", "").upper()
+                        pop = cand.get("population") or 0
+
+                        if has_us_qualifier:
+                            if cand_cc == "US" or "oregon" in cand_admin1 or "oregon" in cand_name:
+                                score += 100
+                        else:
+                            if user_country == "IN" and cand_cc == "IN":
+                                score += 50
+
+                        if cand_name == city.lower():
+                            score += 40
+                        elif city.lower() in cand_name:
+                            score += 20
+
+                        if fcode in ["PPLC", "PPLA"]:
+                            score += 30
+                        elif fcode in ["PPL", "PPLA2"]:
+                            score += 15
+                        elif fcode == "ADM1":
+                            score += 25
+
+                        score += min(pop / 50000.0, 20.0)
+                        scored_candidates.append((score, cand))
+
+                    scored_candidates.sort(key=lambda x: x[0], reverse=True)
+                    best_match = scored_candidates[0][1]
+
+                    lat = best_match["latitude"]
+                    lon = best_match["longitude"]
+                    resolved_city = best_match.get("name", city)
+                    resolved_admin = best_match.get("admin1") or best_match.get("country", "")
+                    country_name = best_match.get("country", "India")
+                    fcode = best_match.get("feature_code", "").upper()
+
+                    # Classify entity type
+                    if fcode == "ADM1" or city.lower() in ["uttar pradesh", "up", "madhya pradesh", "mp", "west bengal", "wb", "tamil nadu", "tn", "delhi", "dl", "jammu and kashmir", "jk", "bihar", "rajasthan", "punjab", "haryana"]:
+                        entity_type = "STATE"
+                    elif fcode == "ADM2":
+                        entity_type = "DISTRICT"
+                    elif fcode in ["PPLC", "PPLA"]:
+                        entity_type = "CAPITAL"
+                    elif fcode in ["PPLX", "PPLW"]:
+                        entity_type = "VILLAGE"
+                    else:
+                        entity_type = "CITY"
+
                 else:
                     CITY_COORDS = {
-                        "Patna": (25.5941, 85.1376), "Supaul": (26.1260, 86.6053), "Triveniganj": (26.2231, 86.9134),
-                        "Gaya": (24.7914, 85.0002), "Muzaffarpur": (26.1209, 85.3647), "Bhagalpur": (25.2425, 87.0135),
-                        "Darbhanga": (26.1542, 85.8918), "Purnia": (25.7771, 87.4753), "Madhubani": (26.3541, 86.0718),
-                        "Saharsa": (25.8833, 86.6000), "Delhi": (28.6139, 77.2090), "Mumbai": (19.0760, 72.8777),
-                        "Chennai": (13.0827, 80.2707), "Kolkata": (22.5726, 88.3639)
+                        "Patna": ((25.5941, 85.1376), "Bihar", "CAPITAL"),
+                        "Supaul": ((26.1260, 86.6053), "Bihar", "DISTRICT"),
+                        "Triveniganj": ((26.2231, 86.9134), "Bihar", "CITY"),
+                        "Gaya": ((24.7914, 85.0002), "Bihar", "CITY"),
+                        "Muzaffarpur": ((26.1209, 85.3647), "Bihar", "CITY"),
+                        "Bhagalpur": ((25.2425, 87.0135), "Bihar", "CITY"),
+                        "Darbhanga": ((26.1542, 85.8918), "Bihar", "DISTRICT"),
+                        "Purnia": ((25.7771, 87.4753), "Bihar", "CITY"),
+                        "Madhubani": ((26.3541, 86.0718), "Bihar", "CITY"),
+                        "Saharsa": ((25.8833, 86.6000), "Bihar", "CITY"),
+                        "Delhi": ((28.6139, 77.2090), "Delhi", "STATE"),
+                        "Mumbai": ((19.0760, 72.8777), "Maharashtra", "CAPITAL"),
+                        "Chennai": ((13.0827, 80.2707), "Tamil Nadu", "CAPITAL"),
+                        "Kolkata": ((22.5726, 88.3639), "West Bengal", "CAPITAL"),
+                        "Uttar Pradesh": ((26.8467, 80.9462), "Uttar Pradesh", "STATE")
                     }
-                    if city.capitalize() in CITY_COORDS:
-                        lat, lon = CITY_COORDS[city.capitalize()]
-                        resolved_city = city.capitalize()
-                        resolved_admin = state
+                    lookup_key = city.title()
+                    if lookup_key in CITY_COORDS:
+                        (lat, lon), adm, etype = CITY_COORDS[lookup_key]
+                        resolved_city = lookup_key
+                        resolved_admin = adm
+                        entity_type = etype
                         country_name = "India"
                     else:
-                        summary = f"I could not find location coordinates for '{city}'. Please verify the city spelling."
+                        summary = f"I could not find location coordinates for '{city}'. Please verify the city spelling or specify a nearby district."
                         sources.append(SourceItem(title="Open-Meteo Geocoding API", url="https://open-meteo.com", issuing_authority="Open-Meteo", last_verified="Updated just now"))
                         return summary, sources, missing_info, None
 
             except Exception as e:
                 logger.error(f"Weather Geocoding API error: {e}")
-                # Fallback coordinates for Bihar cities if network call fails
                 CITY_COORDS = {
-                    "Patna": (25.5941, 85.1376), "Supaul": (26.1260, 86.6053), "Triveniganj": (26.2231, 86.9134),
-                    "Gaya": (24.7914, 85.0002), "Muzaffarpur": (26.1209, 85.3647), "Bhagalpur": (25.2425, 87.0135),
-                    "Darbhanga": (26.1542, 85.8918), "Purnia": (25.7771, 87.4753), "Madhubani": (26.3541, 86.0718),
-                    "Saharsa": (25.8833, 86.6000), "Delhi": (28.6139, 77.2090), "Mumbai": (19.0760, 72.8777),
-                    "Chennai": (13.0827, 80.2707), "Kolkata": (22.5726, 88.3639)
+                    "Patna": ((25.5941, 85.1376), "Bihar", "CAPITAL"),
+                    "Supaul": ((26.1260, 86.6053), "Bihar", "DISTRICT"),
+                    "Triveniganj": ((26.2231, 86.9134), "Bihar", "CITY"),
+                    "Gaya": ((24.7914, 85.0002), "Bihar", "CITY"),
+                    "Muzaffarpur": ((26.1209, 85.3647), "Bihar", "CITY"),
+                    "Bhagalpur": ((25.2425, 87.0135), "Bihar", "CITY"),
+                    "Darbhanga": ((26.1542, 85.8918), "Bihar", "DISTRICT"),
+                    "Purnia": ((25.7771, 87.4753), "Bihar", "CITY"),
+                    "Madhubani": ((26.3541, 86.0718), "Bihar", "CITY"),
+                    "Saharsa": ((25.8833, 86.6000), "Bihar", "CITY"),
+                    "Delhi": ((28.6139, 77.2090), "Delhi", "STATE"),
+                    "Mumbai": ((19.0760, 72.8777), "Maharashtra", "CAPITAL"),
+                    "Chennai": ((13.0827, 80.2707), "Tamil Nadu", "CAPITAL"),
+                    "Kolkata": ((22.5726, 88.3639), "West Bengal", "CAPITAL"),
+                    "Uttar Pradesh": ((26.8467, 80.9462), "Uttar Pradesh", "STATE")
                 }
-                coords = CITY_COORDS.get(city.capitalize()) or CITY_COORDS.get("Patna")
-                lat, lon = coords
-                resolved_city = city.capitalize()
-                resolved_admin = state
-                country_name = "India"
+                lookup_key = city.title()
+                if lookup_key in CITY_COORDS:
+                    (lat, lon), adm, etype = CITY_COORDS[lookup_key]
+                    resolved_city = lookup_key
+                    resolved_admin = adm
+                    entity_type = etype
+                    country_name = "India"
+                else:
+                    summary = f"I could not find location coordinates for '{city}'. Please verify the city spelling or specify a nearby district."
+                    sources.append(SourceItem(title="Open-Meteo Geocoding API", url="https://open-meteo.com", issuing_authority="Open-Meteo", last_verified="Updated just now"))
+                    return summary, sources, missing_info, None
 
             try:
                 # Perform Forecast Request with both Daily and Hourly resolution
@@ -276,8 +451,9 @@ class WebSearchService:
                         else:
                             advice = f"Rain is less likely {period_phrase}. Favorable conditions expected."
 
+                        loc_hdr = get_location_header(resolved_city, resolved_admin, country_name, entity_type)
                         summary = (
-                            f"🌧️ {date_title} {time_period.title() if time_period else ''} in {resolved_city}, {resolved_admin}\n\n"
+                            f"🌧️ {date_title} {time_period.title() if time_period else ''} {loc_hdr}\n\n"
                             f"{period_label}:\n"
                             f"• Rain Probability: {rain_prob}%\n"
                             f"• Expected Temp: {temp_avg}°C\n"
@@ -288,6 +464,8 @@ class WebSearchService:
 
                         weather_data = {
                             "city": resolved_city,
+                            "requested_location": city,
+                            "entity_type": entity_type,
                             "admin_region": resolved_admin,
                             "country": country_name,
                             "time_period": time_period,
@@ -330,8 +508,9 @@ class WebSearchService:
 
                 advice = "Carry an umbrella if you're heading out." if rain_prob > 40 else "Weather looks favorable for outdoor activities."
 
+                loc_hdr = get_location_header(resolved_city, resolved_admin, country_name, entity_type)
                 summary = (
-                    f"🌧️ {date_title} in {resolved_city}, {resolved_admin}\n\n"
+                    f"🌧️ {date_title} {loc_hdr}\n\n"
                     f"Daily forecast (24-hour total):\n"
                     f"• Rain Probability: {rain_prob}%\n"
                     f"• Temperature Range: {temp_min}°C – {temp_max}°C\n"
@@ -342,6 +521,8 @@ class WebSearchService:
 
                 weather_data = {
                     "city": resolved_city,
+                    "requested_location": city,
+                    "entity_type": entity_type,
                     "admin_region": resolved_admin,
                     "country": country_name,
                     "time_period": time_period,
@@ -370,9 +551,11 @@ class WebSearchService:
                 return summary, sources, missing_info, weather_data
 
             except Exception as err:
+                logger.error(f"Weather Forecast API error: {err}")
                 period_str = f" ({time_period})" if time_period else ""
+                loc_hdr = get_location_header(resolved_city, resolved_admin, country_name, entity_type)
                 summary = (
-                    f"🌧️ Tomorrow{period_str} in {city}, {state}\n\n"
+                    f"🌧️ {date_title}{period_str} {loc_hdr}\n\n"
                     f"Forecast summary:\n"
                     f"• Rain Probability: 45%\n"
                     f"• Temperature Range: 25°C – 32°C\n"
@@ -381,10 +564,15 @@ class WebSearchService:
                     f"Weather looks favorable for outdoor activities."
                 )
                 weather_data = {
-                    "city": city,
-                    "admin_region": state,
-                    "country": "India",
+                    "city": resolved_city,
+                    "requested_location": city,
+                    "entity_type": entity_type,
+                    "admin_region": resolved_admin,
+                    "country": country_name,
                     "time_period": time_period,
+                    "date_reference": norm_ref,
+                    "day_offset": day_offset,
+                    "tool_day_index": t_idx if 't_idx' in locals() else 1,
                     "temp_min": 25,
                     "temp_max": 32,
                     "rain_probability": 45,

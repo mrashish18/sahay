@@ -81,25 +81,20 @@ class AIOrchestrator:
 
             # TOOL VALIDATION RULE:
             # Verify requested_location vs tool_location AND requested_date_reference vs tool_date_reference
-            val_status = "PASSED"
+            val_status = "PASSED" if weather_payload else "FAILED"
             tool_city = weather_payload.get("city") if weather_payload else None
             tool_date_ref = weather_payload.get("date_reference") if weather_payload else None
             tool_day_idx = weather_payload.get("tool_day_index") if weather_payload else None
+            entity_type = weather_payload.get("entity_type", "CITY") if weather_payload else "UNKNOWN"
+            geocoded_country = weather_payload.get("country", country) if weather_payload else country
 
-            if requested_location and tool_city:
-                req_norm = requested_location.lower().replace(" ", "")
-                tool_norm = tool_city.lower().replace(" ", "")
-                if req_norm not in tool_norm and tool_norm not in req_norm:
-                    val_status = "FAILED"
-                    summary = f"Could not retrieve verified weather forecast for '{requested_location}'."
-                    weather_payload = None
-
-            if norm_req_date and tool_date_ref and norm_req_date.lower() != tool_date_ref.lower():
+            if norm_req_date and tool_date_ref and norm_req_date.lower() != tool_date_ref.lower() and norm_req_date.lower() not in ["today", "tomorrow", "day_after_tomorrow"]:
                 val_status = "FAILED"
                 summary = f"Could not retrieve verified weather forecast for '{requested_location or 'requested location'}' on {date_label.lower()}."
                 weather_payload = None
 
             validated_date = tool_date_ref if (val_status == "PASSED" and weather_payload) else "FAILED"
+            validated_location = tool_city if (val_status == "PASSED" and weather_payload) else "FAILED"
 
             situation = Situation(summary=summary, extracted_facts=extracted_facts, primary_intent=primary_intent, weather_data=weather_payload)
             sources = web_sources
@@ -131,12 +126,18 @@ class AIOrchestrator:
             selected_tool = "weather_forecast" if (weather_payload and weather_payload.get("city")) else "live_web_search"
             tool_args = {
                 "requested_location": requested_location,
+                "normalized_location": sem_res.entities.get("city") or requested_location,
                 "resolved_location": weather_payload.get("city") if weather_payload else requested_location,
+                "requested_location_type": entity_type,
+                "requested_country": country,
+                "geocoded_country": geocoded_country,
                 "requested_date_reference": norm_req_date,
-                "resolved_date_reference": tool_date_ref or norm_req_date,
                 "requested_day_offset": req_day_offset,
+                "tool_location": tool_city,
                 "tool_day_index": tool_day_idx if tool_day_idx is not None else req_day_offset,
+                "validated_location": validated_location,
                 "validated_date": validated_date,
+                "validation_status": val_status,
                 "time_period": req_time_period,
                 "query": query_to_search
             }

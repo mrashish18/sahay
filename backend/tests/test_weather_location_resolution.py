@@ -269,3 +269,99 @@ def test_28_ambiguous_location_clarification():
     r = ai_orchestrator.process_request(ChatRequest(message="how about Chennai?", conversation_id=cid))
     assert r.flow == FlowType.AMBIGUOUS
     assert "What would you like to know about Chennai — weather, public services, or something else?" in r.situation.summary
+
+def test_29_state_abbreviation_up_not_inherit_goa():
+    cid = "w29"
+    r1 = ai_orchestrator.process_request(ChatRequest(message="weather in Goa", conversation_id=cid))
+    assert "Goa" in r1.situation.summary
+    r2 = ai_orchestrator.process_request(ChatRequest(message="will day after tomorrow rain in UP", conversation_id=cid))
+    assert "Uttar Pradesh" in r2.situation.summary or "UP" in r2.situation.summary
+    assert "Goa" not in r2.situation.summary
+
+def test_30_state_abbreviations_mp_wb_tn_dl_jk():
+    cid1 = "w30_1"
+    r1 = ai_orchestrator.process_request(ChatRequest(message="weather in MP", conversation_id=cid1))
+    assert "Madhya Pradesh" in r1.situation.summary
+
+    cid2 = "w30_2"
+    r2 = ai_orchestrator.process_request(ChatRequest(message="weather in WB", conversation_id=cid2))
+    assert "West Bengal" in r2.situation.summary
+
+    cid3 = "w30_3"
+    r3 = ai_orchestrator.process_request(ChatRequest(message="weather in TN", conversation_id=cid3))
+    assert "Tamil Nadu" in r3.situation.summary
+
+    cid4 = "w30_4"
+    r4 = ai_orchestrator.process_request(ChatRequest(message="weather in DL", conversation_id=cid4))
+    assert "Delhi" in r4.situation.summary
+
+    cid5 = "w30_5"
+    r5 = ai_orchestrator.process_request(ChatRequest(message="weather in JK", conversation_id=cid5))
+    assert "Jammu" in r5.situation.summary or "Kashmir" in r5.situation.summary
+
+def test_31_historical_alternate_names():
+    cid1 = "w31_1"
+    r1 = ai_orchestrator.process_request(ChatRequest(message="will day after tomorrow rain in MADRAS", conversation_id=cid1))
+    assert "Chennai" in r1.situation.summary or "Madras" in r1.situation.summary
+
+    cid2 = "w31_2"
+    r2 = ai_orchestrator.process_request(ChatRequest(message="weather in Bombay", conversation_id=cid2))
+    assert "Mumbai" in r2.situation.summary or "Bombay" in r2.situation.summary
+
+    cid3 = "w31_3"
+    r3 = ai_orchestrator.process_request(ChatRequest(message="weather in Calcutta", conversation_id=cid3))
+    assert "Kolkata" in r3.situation.summary or "Calcutta" in r3.situation.summary
+
+    cid4 = "w31_4"
+    r4 = ai_orchestrator.process_request(ChatRequest(message="weather in Bangalore", conversation_id=cid4))
+    assert "Bengaluru" in r4.situation.summary or "Bangalore" in r4.situation.summary
+
+def test_32_global_ambiguity_madras_vs_madras_oregon():
+    cid1 = "w32_1"
+    r1 = ai_orchestrator.process_request(ChatRequest(message="weather in Madras", conversation_id=cid1))
+    assert "Chennai" in r1.situation.summary or "India" in (r1.situation.weather_data or {}).get("country", "India")
+
+    cid2 = "w32_2"
+    r2 = ai_orchestrator.process_request(ChatRequest(message="weather in Madras, Oregon", conversation_id=cid2, user_context={"country": "US"}))
+    assert "Oregon" in r2.situation.summary or "United States" in (r2.situation.weather_data or {}).get("country", "") or "US" in (r2.situation.weather_data or {}).get("country", "")
+
+def test_33_misspelled_location_darbhangha():
+    cid = "w33"
+    r = ai_orchestrator.process_request(ChatRequest(message="will day after tomorrow rain in Darbhangha", conversation_id=cid))
+    assert "Darbhanga" in r.situation.summary
+
+def test_34_unknown_location_stale_context_prevention():
+    cid = "w34"
+    r1 = ai_orchestrator.process_request(ChatRequest(message="weather in Patna", conversation_id=cid))
+    assert "Patna" in r1.situation.summary
+    r2 = ai_orchestrator.process_request(ChatRequest(message="weather in Xyzabc12345", conversation_id=cid))
+    assert "Patna" not in r2.situation.summary
+    assert r2.decision_metadata.validation_status == "FAILED" or "could not find" in r2.situation.summary.lower()
+
+def test_35_standalone_location_no_topic_ambiguity():
+    cid = "w35"
+    r = ai_orchestrator.process_request(ChatRequest(message="how about Supaul?", conversation_id=cid))
+    assert r.flow == FlowType.AMBIGUOUS
+    assert "What would you like to know about Supaul" in r.situation.summary
+
+def test_36_cross_topic_location_isolation():
+    cid = "w36"
+    r1 = ai_orchestrator.process_request(ChatRequest(message="weather in Chennai", conversation_id=cid))
+    assert "Chennai" in r1.situation.summary
+    r2 = ai_orchestrator.process_request(ChatRequest(message="I need help with a government scheme in Bihar", conversation_id=cid, user_context={"state": "Bihar"}))
+    assert r2.flow == FlowType.PUBLIC_SERVICE
+    assert "Chennai" not in r2.situation.summary
+
+def test_37_geographic_entities_towns_villages_districts():
+    cid = "w37"
+    r1 = ai_orchestrator.process_request(ChatRequest(message="weather in Triveniganj", conversation_id=cid))
+    assert "Triveniganj" in r1.situation.summary
+    r2 = ai_orchestrator.process_request(ChatRequest(message="weather in Supaul district", conversation_id=cid))
+    assert "Supaul" in r2.situation.summary
+
+def test_38_full_tool_arguments_schema():
+    cid = "w38"
+    r = ai_orchestrator.process_request(ChatRequest(message="will day after tomorrow rain in Patna", conversation_id=cid))
+    t_args = r.decision_metadata.tool_arguments
+    for key in ["requested_location", "normalized_location", "resolved_location", "requested_location_type", "requested_country", "geocoded_country", "requested_date_reference", "requested_day_offset", "tool_location", "tool_day_index", "validated_location", "validated_date", "validation_status"]:
+        assert key in t_args, f"Missing key {key} in tool_arguments: {t_args}"
