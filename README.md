@@ -26,12 +26,12 @@
   <img src="screenshots/sahay-thumbnail.png" alt="SAHAY 2.0 — Civic Navigator" width="100%"/>
 </p>
 
-[![Python](https://img.shields.io/badge/Python-3.11+-3776AB?style=for-the-badge&logo=python&logoColor=white)](#-11-local-setup--installation)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.110-009688?style=for-the-badge&logo=fastapi&logoColor=white)](#-11-local-setup--installation)
-[![React](https://img.shields.io/badge/React-18.2-61DAFB?style=for-the-badge&logo=react&logoColor=black)](#-11-local-setup--installation)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.2-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](#-11-local-setup--installation)
-[![Vite](https://img.shields.io/badge/Vite-6.4-646CFF?style=for-the-badge&logo=vite&logoColor=white)](#-11-local-setup--installation)
-[![Pytest](https://img.shields.io/badge/Pytest-120%2F120_PASSED-success?style=for-the-badge&logo=pytest&logoColor=white)](#-9-verification--quality-assurance)
+[![Python](https://img.shields.io/badge/Python-3.12-3776AB?style=for-the-badge&logo=python&logoColor=white)](#-12-local-setup--installation)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.110-009688?style=for-the-badge&logo=fastapi&logoColor=white)](#-12-local-setup--installation)
+[![React](https://img.shields.io/badge/React-18.2-61DAFB?style=for-the-badge&logo=react&logoColor=black)](#-12-local-setup--installation)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.2-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](#-12-local-setup--installation)
+[![Vite](https://img.shields.io/badge/Vite-6.4-646CFF?style=for-the-badge&logo=vite&logoColor=white)](#-12-local-setup--installation)
+[![Pytest](https://img.shields.io/badge/Pytest-120%2F120_PASSED-success?style=for-the-badge&logo=pytest&logoColor=white)](#-10-verification--quality-assurance)
 
 </div>
 
@@ -78,7 +78,57 @@ Citizens seeking public assistance or emergency disaster aid face severe adminis
 
 ---
 
-## 🏗️ 5. Technical Architecture
+## 📸 5. Product Showcase
+
+### 🏠 Civic Assistance & Public Trust
+<p align="center">
+  <img src="screenshots/sahay-homepage.png" alt="Sahay Civic Navigator — Main Interface" width="48%"/>
+  &nbsp;
+  <img src="screenshots/sahay-public-trust.png" alt="Sahay Public Trust Architecture" width="48%"/>
+</p>
+<p align="center">
+  <em>Natural-language public-service discovery paired with verified source traceability & legal disclaimers</em>
+</p>
+
+<br/>
+
+### 🚨 Crisis & Safety Routing
+<p align="center">
+  <img src="screenshots/sahay-crisis-assistance.png" alt="Safety-first crisis routing" width="48%"/>
+  &nbsp;
+  <img src="screenshots/sahay-emergency-flood-assistance.png" alt="Emergency flood relief guidance" width="48%"/>
+</p>
+<p align="center">
+  <em>First-Class Crisis Routing — Physical evacuation steps & priority helplines surface above paperwork</em>
+</p>
+
+<br/>
+
+### 🌦️ Real-Time Intelligence & Weather Integration
+<p align="center">
+  <img src="screenshots/sahay-weather-query.png" alt="Weather query in Hinglish" width="48%"/>
+  &nbsp;
+  <img src="screenshots/sahay-weather-result.png" alt="Real-time Open-Meteo weather payload" width="48%"/>
+</p>
+<p align="center">
+  <em>Universal location resolution paired with real-time Open-Meteo weather forecasts</em>
+</p>
+
+<br/>
+
+### ⚙️ System Workflow & Tool Execution
+<p align="center">
+  <img src="screenshots/sahay-how-it-works.png" alt="System Processing Workflow" width="48%"/>
+  &nbsp;
+  <img src="screenshots/sahay-tool-registry.png" alt="Sandboxed Tool Execution Engine Registry" width="48%"/>
+</p>
+<p align="center">
+  <em>End-to-end request processing flow paired with Sandboxed Tool Execution Engine (TTE) controls</em>
+</p>
+
+---
+
+## 🏗️ 6. Technical Architecture
 
 SAHAY is built as a high-performance full-stack application. The **React + Vite** frontend is served alongside a **FastAPI** backend via same-origin `/api/*` serverless routes on Vercel.
 
@@ -112,7 +162,7 @@ SAHAY is built as a high-performance full-stack application. The **React + Vite*
 
 ---
 
-## 🧠 6. Conversational Intelligence & Pipeline
+## 🧠 7. Conversational Intelligence & Pipeline
 
 The backend orchestrates queries through modular, decoupled services:
 
@@ -129,7 +179,7 @@ The backend orchestrates queries through modular, decoupled services:
 
 ---
 
-## 🌍 7. Universal Location Intelligence
+## 🌍 8. Universal Location Intelligence
 
 Supports arbitrary geographic entities through extraction, normalization, geocoding, candidate ranking, and clarification fallback, subject to the coverage of the underlying geographic data provider.
 
@@ -143,7 +193,7 @@ Supports arbitrary geographic entities through extraction, normalization, geocod
 
 ---
 
-## 🛡️ 8. Security & Trust Engineering
+## 🛡️ 9. Security & Trust Engineering
 
 - **Production Secret Validation:** Enforces strict validation of `SECRET_KEY` and production configuration.
 - **Deterministic Legal Rules:** Statutory eligibility logic runs exclusively in Python code, preventing LLM hallucination of benefits.
@@ -155,7 +205,7 @@ Supports arbitrary geographic entities through extraction, normalization, geocod
 
 ---
 
-## ✅ 9. Verification & Quality Assurance
+## ✅ 10. Verification & Quality Assurance
 
 All engineering benchmarks have been empirically verified:
 
@@ -170,7 +220,7 @@ All engineering benchmarks have been empirically verified:
 
 ---
 
-## 📁 10. Project Structure
+## 📁 11. Project Structure
 
 ```text
 sahay/
@@ -195,10 +245,10 @@ sahay/
 
 ---
 
-## ⚡ 11. Local Setup & Installation
+## ⚡ 12. Local Setup & Installation
 
 ### Prerequisites
-- Python 3.11+
+- Python 3.12
 - Node.js 18+
 
 ### 1. Clone & Setup Environment
@@ -228,7 +278,7 @@ Access the application locally at `http://localhost:5173`.
 
 ---
 
-## 🔌 12. API Reference
+## 🔌 13. API Reference
 
 ### Primary Chat Endpoint: `POST /api/v1/chat`
 
@@ -262,7 +312,7 @@ Access the application locally at `http://localhost:5173`.
 
 ---
 
-## 🏆 13. Hackathon Highlights
+## 🏆 14. Hackathon Highlights
 
 - 🎯 **High Social Impact:** Direct assistance for underprivileged citizens navigating public welfare and emergency crises.
 - ⚡ **Zero Hallucination Eligibility:** Deterministic Python rule evaluation eliminates false promises of government benefits.
@@ -272,7 +322,7 @@ Access the application locally at `http://localhost:5173`.
 
 ---
 
-## 🔭 14. Future Scope
+## 🔭 15. Future Scope
 
 - 🌍 **Expanded Welfare Schemes:** Integrate additional state-level schemes across India and global municipal jurisdictions.
 - 🗣️ **Voice & Regional NLU:** Add speech-to-text and multi-lingual voice interaction in regional Indian languages.
