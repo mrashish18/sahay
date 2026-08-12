@@ -30,6 +30,7 @@ app.include_router(services.router, prefix=settings.API_V1_STR, tags=["Services 
 
 @app.get("/health")
 @app.get("/api/health")
+@app.get("/api/v1/health")
 async def health_check():
     return {"status": "ok"}
 

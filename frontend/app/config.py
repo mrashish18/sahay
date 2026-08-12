@@ -33,4 +33,9 @@ class Settings(BaseSettings):
     
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
+    def model_post_init(self, __context):
+        if self.ENVIRONMENT.lower() == "production":
+            if not self.SECRET_KEY or self.SECRET_KEY == "dev_secret_key_change_in_production":
+                raise ValueError("CRITICAL SECURITY ERROR: SECRET_KEY environment variable MUST be explicitly configured in production environment.")
+
 settings = Settings()
