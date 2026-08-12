@@ -52,19 +52,36 @@ class AIOrchestrator:
         evidence = []
 
         # -------------------------------------------------------------------
+        # -------------------------------------------------------------------
         # ROUTE A: WEB_SEARCH_REQUIRED (Weather & Live Current Information)
         # -------------------------------------------------------------------
         if flow == FlowType.WEB_SEARCH_REQUIRED:
             query_to_search = sem_res.entities.get("search_rewrite") or sem_res.normalized_query or request.message
             req_time_period = sem_res.entities.get("time_period")
+            requested_location = sem_res.entities.get("city") or sem_res.entities.get("location")
             summary, web_sources, web_missing, weather_payload = web_search_service.process_web_or_weather_query(
                 query=query_to_search,
                 user_context=request.user_context,
-                time_period=req_time_period
+                time_period=req_time_period,
+                location=requested_location
             )
+
+            # TOOL VALIDATION RULE:
+            # For every weather request, verify requested_location vs tool_location
+            val_status = "PASSED"
+            tool_city = weather_payload.get("city") if weather_payload else None
+            if requested_location and tool_city:
+                req_norm = requested_location.lower().replace(" ", "")
+                tool_norm = tool_city.lower().replace(" ", "")
+                if req_norm not in tool_norm and tool_norm not in req_norm:
+                    val_status = "FAILED"
+                    summary = f"Could not retrieve verified weather forecast for '{requested_location}'."
+                    weather_payload = None
+
             situation = Situation(summary=summary, extracted_facts=extracted_facts, primary_intent=primary_intent, weather_data=weather_payload)
             sources = web_sources
             if web_missing:
+                val_status = "FAILED" if not weather_payload else val_status
                 existing_fields = {m.field for m in missing_info}
                 for wm in web_missing:
                     if wm.field not in existing_fields:
@@ -88,17 +105,26 @@ class AIOrchestrator:
                 )
 
             selected_tool = "weather_forecast" if (weather_payload and weather_payload.get("city")) else "live_web_search"
-            tool_args = {"query": query_to_search, "location": sem_res.entities.get("location"), "time_period": req_time_period}
-            val_status = "PASSED" if (weather_payload and weather_payload.get("city")) or not web_missing else ("FAILED" if web_missing else "PASSED")
+            tool_args = {
+                "requested_location": requested_location,
+                "resolved_location": weather_payload.get("city") if weather_payload else requested_location,
+                "time_period": req_time_period,
+                "query": query_to_search
+            }
+
+            entity_prov = dict(getattr(sem_res, "entity_provenance", {}))
+            for k in sem_res.entities:
+                if k not in entity_prov:
+                    if sem_res.entities.get(k) and sem_res.entities.get(k) != getattr(session, k, None):
+                        entity_prov[k] = EntityProvenance.CURRENT_MESSAGE
+                    else:
+                        entity_prov[k] = EntityProvenance.CONVERSATION_CONTEXT
 
             decision = ConversationDecision(
                 intent=primary_intent,
                 sub_intent=getattr(sem_res, "sub_intent", None) or primary_intent,
                 entities=sem_res.entities,
-                entity_provenance={
-                    k: (EntityProvenance.CURRENT_MESSAGE if sem_res.entities.get(k) and sem_res.entities.get(k) != getattr(session, k, None) else EntityProvenance.CONVERSATION_CONTEXT)
-                    for k in sem_res.entities
-                },
+                entity_provenance=entity_prov,
                 temporal_context={"date": sem_res.entities.get("time") or "today", "time_period": req_time_period},
                 jurisdiction={"country": country, "state": state},
                 conversation_context_used={

@@ -34,7 +34,7 @@ class WebSearchService:
     """
 
     def process_web_or_weather_query(
-        self, query: str, user_context: Dict[str, Any] = None, time_period: Optional[str] = None
+        self, query: str, user_context: Dict[str, Any] = None, time_period: Optional[str] = None, location: Optional[str] = None
     ) -> Tuple[str, List[SourceItem], List[MissingInfoItem], Optional[Dict[str, Any]]]:
         text_lower = query.lower().strip()
         user_context = user_context or {}
@@ -43,10 +43,14 @@ class WebSearchService:
         weather_data: Optional[Dict[str, Any]] = None
 
         # 1. WEATHER QUERY ROUTING
-        if "weather" in text_lower or "rain" in text_lower or "forecast" in text_lower or "temp" in text_lower or "evening" in text_lower or "morning" in text_lower or "afternoon" in text_lower or "night" in text_lower or time_period:
+        if "weather" in text_lower or "rain" in text_lower or "forecast" in text_lower or "temp" in text_lower or "evening" in text_lower or "morning" in text_lower or "afternoon" in text_lower or "night" in text_lower or time_period or location:
             
             # Detect target city
-            city = user_context.get("city")
+            # PRECEDENCE:
+            # 1. Explicit location parameter (from semantic router / current turn)
+            # 2. Explicit city in query text
+            # 3. user_context.get("city") ONLY as fallback
+            city = location
             if not city:
                 known_cities = [
                     "triveniganj", "triveni ganj", "supaul", "patna", "gaya", "muzaffarpur", "bhagalpur",
@@ -73,6 +77,9 @@ class WebSearchService:
                         loc = " ".join(clean_words).strip("?,.!")
                         if loc and len(loc) >= 3 and not any(w in loc.lower() for w in ["weather", "rain", "forecast", "temp"]):
                             city = loc.title()
+
+            if not city:
+                city = user_context.get("city")
 
             state = user_context.get("state", "Bihar")
 

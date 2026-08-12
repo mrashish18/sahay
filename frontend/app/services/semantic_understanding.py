@@ -3,7 +3,7 @@ import os
 import json
 import logging
 from typing import Dict, Any, Tuple, List, Optional
-from app.models.schemas import FlowType, UrgencyLevel, Urgency, Situation, MissingInfoItem
+from app.models.schemas import FlowType, UrgencyLevel, Urgency, Situation, MissingInfoItem, EntityProvenance
 
 logger = logging.getLogger(__name__)
 
@@ -281,8 +281,14 @@ class SemanticUnderstandingEngine:
             explicit_city_in_msg = self.extract_location_from_text(text_raw)
 
             city = explicit_city_in_msg
-            if not city and active_topic == "WEATHER" and active_location:
-                city = active_location
+            if explicit_city_in_msg:
+                city_prov = EntityProvenance.CURRENT_MESSAGE
+            else:
+                city_prov = EntityProvenance.CONVERSATION_CONTEXT
+                if active_topic == "WEATHER" and getattr(session, "weather_context", {}).get("location"):
+                    city = session.weather_context["location"]
+                elif active_topic == "WEATHER" and active_location:
+                    city = active_location
 
             state = user_context.get("state", "Bihar")
             time_period = None
@@ -340,7 +346,8 @@ class SemanticUnderstandingEngine:
                 urgency=urgency,
                 missing_information=missing_info,
                 temporal_requirement="CURRENT",
-                domain="WEATHER"
+                domain="WEATHER",
+                entity_provenance={"location": city_prov, "city": city_prov} if city else {}
             )
 
         # Context Case C: Location + Time Without Domain when NO active weather session ("tomorrow + Patna + evening")
@@ -383,16 +390,20 @@ class SemanticUnderstandingEngine:
         )
 
         if is_weather_followup:
-            city = self.extract_location_from_text(text_raw)
-            if not city:
-                city = active_location
-            if not city:
-                for msg in [last_user_msg, last_bot_msg]:
-                    c_found = self.extract_location_from_text(msg)
-                    if c_found:
-                        city = c_found
-                        break
-            city = city or "Patna"
+            explicit_city_in_msg = self.extract_location_from_text(text_raw)
+            if explicit_city_in_msg:
+                city = explicit_city_in_msg
+                city_prov = EntityProvenance.CURRENT_MESSAGE
+            else:
+                city = getattr(session, "weather_context", {}).get("location") or active_location
+                city_prov = EntityProvenance.CONVERSATION_CONTEXT
+                if not city:
+                    for msg in [last_user_msg, last_bot_msg]:
+                        c_found = self.extract_location_from_text(msg)
+                        if c_found:
+                            city = c_found
+                            break
+                city = city or "Patna"
 
             time_period = None
             if "night" in text_lower or "raat" in text_lower or "overnight" in text_lower:
@@ -430,7 +441,8 @@ class SemanticUnderstandingEngine:
                 urgency=urgency,
                 missing_information=[],
                 temporal_requirement="CURRENT",
-                domain="WEATHER"
+                domain="WEATHER",
+                entity_provenance={"location": city_prov, "city": city_prov} if city else {}
             )
 
         # Single-Word or Short City Follow-Up ("Patna", "Delhi", "Supaul") after weather query or clarification

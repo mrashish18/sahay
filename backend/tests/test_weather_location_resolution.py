@@ -152,3 +152,19 @@ def test_25_rapid_alternating_locations():
     for loc in locs:
         r = ai_orchestrator.process_request(ChatRequest(message=f"weather in {loc}", conversation_id=cid))
         assert loc in r.situation.summary
+
+def test_26_stale_user_context_multi_turn_sequence():
+    cid = "w26"
+    sequence = [
+        ("will tomorrow rain in Patna", {"city": "Patna"}, "Patna"),
+        ("will tomorrow rain in Supaul", {"city": "Patna"}, "Supaul"),
+        ("will tomorrow rain in Triveniganj", {"city": "Supaul"}, "Triveniganj"),
+        ("what about tomorrow?", {}, "Triveniganj"),
+        ("how about Chennai?", {"city": "Triveniganj"}, "Chennai"),
+        ("will tomorrow rain in Triveniganj", {"city": "Chennai"}, "Triveniganj")
+    ]
+    for msg, ctx, exp_city in sequence:
+        r = ai_orchestrator.process_request(ChatRequest(message=msg, conversation_id=cid, user_context=ctx))
+        assert exp_city in r.situation.summary, f"Failed on '{msg}' with user_context={ctx}: expected {exp_city} in {r.situation.summary}"
+        assert r.decision_metadata.validation_status == "PASSED"
+        assert r.decision_metadata.selected_tool == "weather_forecast"
