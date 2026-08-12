@@ -135,6 +135,21 @@ class SemanticUnderstandingEngine:
 
         return None
 
+    def extract_date_reference_from_text(self, text: str) -> Optional[str]:
+        text_lower = text.lower()
+        # Multi-word patterns MUST be evaluated FIRST before single words to prevent false prefix/suffix matches
+        if re.search(r"\b(?:day\s+after\s+tomorrow|day-after-tomorrow|parson|parso)\b", text_lower):
+            return "day_after_tomorrow"
+        if re.search(r"\b(?:day\s+before\s+yesterday|day-before-yesterday|tarson|tarso)\b", text_lower):
+            return "day_before_yesterday"
+        if re.search(r"\b(?:yesterday|beeta\s+kal)\b", text_lower):
+            return "yesterday"
+        if re.search(r"\b(?:today|aaj|tonight|this\s+evening|this\s+morning|this\s+afternoon)\b", text_lower):
+            return "today"
+        if re.search(r"\b(?:tomorrow|kal|overnight)\b", text_lower):
+            return "tomorrow"
+        return None
+
     def understand_and_normalize(
         self,
         user_message: str,
@@ -290,6 +305,14 @@ class SemanticUnderstandingEngine:
                 elif active_topic == "WEATHER" and active_location:
                     city = active_location
 
+            explicit_date_in_msg = self.extract_date_reference_from_text(text_raw)
+            if explicit_date_in_msg:
+                date_ref = explicit_date_in_msg
+                date_prov = EntityProvenance.CURRENT_MESSAGE
+            else:
+                date_ref = getattr(session, "weather_context", {}).get("date_reference") or getattr(session, "date_reference", None) or "tomorrow"
+                date_prov = EntityProvenance.CONVERSATION_CONTEXT if (session and getattr(session, "date_reference", None)) else EntityProvenance.SYSTEM_DEFAULT
+
             state = user_context.get("state", "Bihar")
             time_period = None
             if "night" in text_lower or "raat" in text_lower or "overnight" in text_lower:
@@ -309,7 +332,8 @@ class SemanticUnderstandingEngine:
 
             if city:
                 period_str = f" {time_period}" if time_period else ""
-                norm_query = f"What will the weather be like tomorrow{period_str} in {city}?"
+                date_disp = date_ref.replace("_", " ")
+                norm_query = f"What will the weather be like {date_disp}{period_str} in {city}?"
                 missing_info = []
                 if session:
                     session.update_context(
@@ -318,10 +342,11 @@ class SemanticUnderstandingEngine:
                         active_domain="WEATHER",
                         location=city,
                         time_period=time_period,
-                        date_reference="tomorrow"
+                        date_reference=date_ref
                     )
             else:
-                period_label = f"tomorrow {time_period}'s" if time_period else "tomorrow's"
+                date_disp = date_ref.replace("_", " ")
+                period_label = f"{date_disp} {time_period}'s" if time_period else f"{date_disp}'s"
                 q_text = f"Which city in {state} should I check for {period_label} weather forecast?"
                 norm_query = f"Weather forecast for {state}"
                 missing_info = [
@@ -332,7 +357,7 @@ class SemanticUnderstandingEngine:
                     )
                 ]
                 if session:
-                    session.set_pending(intent="WEATHER", clarification="city", entities={"time_period": time_period, "state": state})
+                    session.set_pending(intent="WEATHER", clarification="city", entities={"time_period": time_period, "state": state, "date_reference": date_ref})
 
             urgency = Urgency(level=UrgencyLevel.INFORMATIONAL, score=0.20, reasoning="Weather forecast inquiry.")
             return SemanticQueryResult(
@@ -342,12 +367,12 @@ class SemanticUnderstandingEngine:
                 primary_intent="WEATHER",
                 secondary_intents=[],
                 confidence=0.97,
-                entities={"location": city or state, "city": city, "time": "tomorrow", "time_period": time_period},
+                entities={"location": city or state, "city": city, "date_reference": date_ref, "time": date_ref, "time_period": time_period},
                 urgency=urgency,
                 missing_information=missing_info,
                 temporal_requirement="CURRENT",
                 domain="WEATHER",
-                entity_provenance={"location": city_prov, "city": city_prov} if city else {}
+                entity_provenance={"location": city_prov, "city": city_prov, "date_reference": date_prov, "time": date_prov} if city else {}
             )
 
         # Context Case C: Location + Time Without Domain when NO active weather session ("tomorrow + Patna + evening")
@@ -405,6 +430,14 @@ class SemanticUnderstandingEngine:
                             break
                 city = city or "Patna"
 
+            explicit_date_in_msg = self.extract_date_reference_from_text(text_raw)
+            if explicit_date_in_msg:
+                date_ref = explicit_date_in_msg
+                date_prov = EntityProvenance.CURRENT_MESSAGE
+            else:
+                date_ref = getattr(session, "weather_context", {}).get("date_reference") or getattr(session, "date_reference", None) or "tomorrow"
+                date_prov = EntityProvenance.CONVERSATION_CONTEXT if (session and getattr(session, "date_reference", None)) else EntityProvenance.SYSTEM_DEFAULT
+
             time_period = None
             if "night" in text_lower or "raat" in text_lower or "overnight" in text_lower:
                 time_period = "night"
@@ -424,11 +457,12 @@ class SemanticUnderstandingEngine:
                     active_domain="WEATHER",
                     location=city,
                     time_period=time_period,
-                    date_reference="tomorrow"
+                    date_reference=date_ref
                 )
 
             period_str = f" {time_period}" if time_period else ""
-            norm_query = f"What will the weather be like tomorrow{period_str} in {city}?"
+            date_disp = date_ref.replace("_", " ")
+            norm_query = f"What will the weather be like {date_disp}{period_str} in {city}?"
             urgency = Urgency(level=UrgencyLevel.INFORMATIONAL, score=0.20, reasoning="Weather follow-up query.")
             return SemanticQueryResult(
                 raw_query=text_raw,
@@ -437,12 +471,12 @@ class SemanticUnderstandingEngine:
                 primary_intent="WEATHER",
                 secondary_intents=[],
                 confidence=0.98,
-                entities={"location": city, "city": city, "time": "tomorrow", "time_period": time_period},
+                entities={"location": city, "city": city, "date_reference": date_ref, "time": date_ref, "time_period": time_period},
                 urgency=urgency,
                 missing_information=[],
                 temporal_requirement="CURRENT",
                 domain="WEATHER",
-                entity_provenance={"location": city_prov, "city": city_prov} if city else {}
+                entity_provenance={"location": city_prov, "city": city_prov, "date_reference": date_prov, "time": date_prov} if city else {}
             )
 
         # Single-Word or Short City Follow-Up ("Patna", "Delhi", "Supaul") after weather query or clarification
@@ -452,6 +486,14 @@ class SemanticUnderstandingEngine:
             if is_weather_context:
                 city = extracted_city or text_raw.capitalize()
                 time_period = getattr(session, "time_period", None) or "evening"
+                explicit_date_in_msg = self.extract_date_reference_from_text(text_raw)
+                if explicit_date_in_msg:
+                    date_ref = explicit_date_in_msg
+                    date_prov = EntityProvenance.CURRENT_MESSAGE
+                else:
+                    date_ref = getattr(session, "weather_context", {}).get("date_reference") or getattr(session, "date_reference", None) or "tomorrow"
+                    date_prov = EntityProvenance.CONVERSATION_CONTEXT if (session and getattr(session, "date_reference", None)) else EntityProvenance.SYSTEM_DEFAULT
+
                 if session:
                     session.clear_pending()
                     session.update_context(
@@ -460,9 +502,9 @@ class SemanticUnderstandingEngine:
                         active_domain="WEATHER",
                         location=city,
                         time_period=time_period,
-                        date_reference="tomorrow"
+                        date_reference=date_ref
                     )
-                norm_query = f"What will the weather be like tomorrow {time_period} in {city}?"
+                norm_query = f"What will the weather be like {date_ref} {time_period} in {city}?"
                 urgency = Urgency(level=UrgencyLevel.INFORMATIONAL, score=0.20, reasoning="City follow-up for weather query.")
                 return SemanticQueryResult(
                     raw_query=text_raw,
@@ -471,11 +513,12 @@ class SemanticUnderstandingEngine:
                     primary_intent="WEATHER",
                     secondary_intents=[],
                     confidence=0.98,
-                    entities={"location": city, "time": "tomorrow", "city": city, "time_period": time_period},
+                    entities={"location": city, "date_reference": date_ref, "time": date_ref, "city": city, "time_period": time_period},
                     urgency=urgency,
                     missing_information=[],
                     temporal_requirement="CURRENT",
-                    domain="WEATHER"
+                    domain="WEATHER",
+                    entity_provenance={"location": EntityProvenance.CURRENT_MESSAGE, "city": EntityProvenance.CURRENT_MESSAGE, "date_reference": date_prov, "time": date_prov}
                 )
 
         # Pronoun / Reference / Explicit Scheme Follow-Up ("am i eligible for it?", "what documents do I need?", "pmay milega mujhe")
@@ -752,11 +795,12 @@ class SemanticUnderstandingEngine:
                 domain="PUBLIC_SERVICE"
             )
 
-        # -------------------------------------------------------------------
-        # 7. UNRECOGNIZED / AMBIGUOUS QUERY FALLBACK PROTECTION (Never PUBLIC_SERVICE!)
-        # -------------------------------------------------------------------
         urgency = Urgency(level=UrgencyLevel.NORMAL, score=0.30, reasoning="Unrecognized or ambiguous query requiring user clarification.")
-        clarification = f"Sure — what details would you like to know about '{text_raw}'?"
+        extracted_loc = self.extract_location_from_text(text_raw)
+        if extracted_loc:
+            clarification = f"What would you like to know about {extracted_loc} — weather, public services, or something else?"
+        else:
+            clarification = f"Sure — what details would you like to know about '{text_raw}'?"
         if session:
             session.reset_topic("AMBIGUOUS", new_domain="GENERAL")
             session.set_pending(intent="AMBIGUOUS", clarification="query_clarification")

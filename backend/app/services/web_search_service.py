@@ -34,7 +34,7 @@ class WebSearchService:
     """
 
     def process_web_or_weather_query(
-        self, query: str, user_context: Dict[str, Any] = None, time_period: Optional[str] = None, location: Optional[str] = None
+        self, query: str, user_context: Dict[str, Any] = None, time_period: Optional[str] = None, location: Optional[str] = None, date_reference: Optional[str] = None
     ) -> Tuple[str, List[SourceItem], List[MissingInfoItem], Optional[Dict[str, Any]]]:
         text_lower = query.lower().strip()
         user_context = user_context or {}
@@ -43,7 +43,7 @@ class WebSearchService:
         weather_data: Optional[Dict[str, Any]] = None
 
         # 1. WEATHER QUERY ROUTING
-        if "weather" in text_lower or "rain" in text_lower or "forecast" in text_lower or "temp" in text_lower or "evening" in text_lower or "morning" in text_lower or "afternoon" in text_lower or "night" in text_lower or time_period or location:
+        if "weather" in text_lower or "rain" in text_lower or "forecast" in text_lower or "temp" in text_lower or "evening" in text_lower or "morning" in text_lower or "afternoon" in text_lower or "night" in text_lower or time_period or location or date_reference:
             
             # Detect target city
             # PRECEDENCE:
@@ -81,11 +81,33 @@ class WebSearchService:
             if not city:
                 city = user_context.get("city")
 
+            # Detect date reference
+            # PRECEDENCE FOR DATE REFERENCE:
+            # 1. Explicit date_reference argument (from semantic router / current turn)
+            # 2. Extracted date keyword from query text ("today", "aaj", "tonight", "tomorrow", "day after tomorrow", "yesterday", etc.)
+            # 3. user_context.get("date_reference") or user_context.get("date")
+            # 4. Default: "tomorrow"
+            date_ref = date_reference
+            if not date_ref:
+                if re.search(r"\b(?:day\s+after\s+tomorrow|day-after-tomorrow|parson|parso)\b", text_lower):
+                    date_ref = "day_after_tomorrow"
+                elif re.search(r"\b(?:day\s+before\s+yesterday|day-before-yesterday|tarson|tarso)\b", text_lower):
+                    date_ref = "day_before_yesterday"
+                elif re.search(r"\b(?:yesterday|beeta\s+kal)\b", text_lower):
+                    date_ref = "yesterday"
+                elif re.search(r"\b(?:today|aaj|tonight|this\s+evening|this\s+morning|this\s+afternoon)\b", text_lower):
+                    date_ref = "today"
+                elif re.search(r"\b(?:tomorrow|kal|overnight)\b", text_lower):
+                    date_ref = "tomorrow"
+            if not date_ref:
+                date_ref = user_context.get("date_reference") or user_context.get("date") or "tomorrow"
+
             state = user_context.get("state", "Bihar")
 
             # If city is missing and only state (e.g. Bihar) is known: ask for city!
             if not city:
-                period_label = f"tomorrow {time_period}'s" if time_period else "tomorrow's"
+                disp_ref = date_ref.replace("_", " ")
+                period_label = f"{disp_ref} {time_period}'s" if time_period else f"{disp_ref}'s"
                 summary = f"Which city in {state} should I check for {period_label} weather forecast?"
                 missing_info = [
                     MissingInfoItem(
@@ -105,41 +127,49 @@ class WebSearchService:
                 with urllib.request.urlopen(req, timeout=5.0) as resp:
                     geo_data = json.loads(resp.read().decode("utf-8"))
 
-                CITY_COORDS = {
-                    "Patna": (25.5941, 85.1376),
-                    "Gaya": (24.7914, 85.0002),
-                    "Supaul": (26.1260, 86.6053),
-                    "Triveniganj": (26.1550, 86.8047),
-                    "Muzaffarpur": (26.1209, 85.3647),
-                    "Bhagalpur": (25.2425, 87.0139),
-                    "Darbhanga": (26.1542, 85.8918),
-                    "Purnia": (25.7771, 87.4753),
-                    "Saharsa": (25.8833, 86.6000),
-                    "Delhi": (28.6139, 77.2090),
-                    "Mumbai": (19.0760, 72.8777),
-                    "Kolkata": (22.5726, 88.3639),
-                    "Chennai": (13.0827, 80.2707),
-                    "Bengaluru": (12.9716, 77.5946),
-                    "Hyderabad": (17.3850, 78.4867)
-                }
-                
-                if geo_data.get("results"):
-                    result_loc = geo_data["results"][0]
-                    lat = result_loc["latitude"]
-                    lon = result_loc["longitude"]
-                    resolved_city = result_loc.get("name", city)
-                    resolved_admin = result_loc.get("admin1", state)
-                    country_name = result_loc.get("country", "India")
-                elif city in CITY_COORDS:
-                    lat, lon = CITY_COORDS[city]
-                    resolved_city = city
-                    resolved_admin = state
-                    country_name = "India"
+                results = geo_data.get("results", [])
+                if results:
+                    first_match = results[0]
+                    lat = first_match["latitude"]
+                    lon = first_match["longitude"]
+                    resolved_city = first_match.get("name", city)
+                    resolved_admin = first_match.get("admin1") or first_match.get("country", "")
+                    country_name = first_match.get("country", "India")
                 else:
-                    summary = f"I couldn't locate '{city}'. Please specify a valid city name."
-                    sources.append(SourceItem(title="Open-Meteo Weather Forecast API", url="https://open-meteo.com", issuing_authority="Open-Meteo Global Weather Service", last_verified="Updated just now"))
-                    return summary, sources, missing_info, None
+                    CITY_COORDS = {
+                        "Patna": (25.5941, 85.1376), "Supaul": (26.1260, 86.6053), "Triveniganj": (26.2231, 86.9134),
+                        "Gaya": (24.7914, 85.0002), "Muzaffarpur": (26.1209, 85.3647), "Bhagalpur": (25.2425, 87.0135),
+                        "Darbhanga": (26.1542, 85.8918), "Purnia": (25.7771, 87.4753), "Madhubani": (26.3541, 86.0718),
+                        "Saharsa": (25.8833, 86.6000), "Delhi": (28.6139, 77.2090), "Mumbai": (19.0760, 72.8777),
+                        "Chennai": (13.0827, 80.2707), "Kolkata": (22.5726, 88.3639)
+                    }
+                    if city.capitalize() in CITY_COORDS:
+                        lat, lon = CITY_COORDS[city.capitalize()]
+                        resolved_city = city.capitalize()
+                        resolved_admin = state
+                        country_name = "India"
+                    else:
+                        summary = f"I could not find location coordinates for '{city}'. Please verify the city spelling."
+                        sources.append(SourceItem(title="Open-Meteo Geocoding API", url="https://open-meteo.com", issuing_authority="Open-Meteo", last_verified="Updated just now"))
+                        return summary, sources, missing_info, None
 
+            except Exception as e:
+                logger.error(f"Weather Geocoding API error: {e}")
+                # Fallback coordinates for Bihar cities if network call fails
+                CITY_COORDS = {
+                    "Patna": (25.5941, 85.1376), "Supaul": (26.1260, 86.6053), "Triveniganj": (26.2231, 86.9134),
+                    "Gaya": (24.7914, 85.0002), "Muzaffarpur": (26.1209, 85.3647), "Bhagalpur": (25.2425, 87.0135),
+                    "Darbhanga": (26.1542, 85.8918), "Purnia": (25.7771, 87.4753), "Madhubani": (26.3541, 86.0718),
+                    "Saharsa": (25.8833, 86.6000), "Delhi": (28.6139, 77.2090), "Mumbai": (19.0760, 72.8777),
+                    "Chennai": (13.0827, 80.2707), "Kolkata": (22.5726, 88.3639)
+                }
+                coords = CITY_COORDS.get(city.capitalize()) or CITY_COORDS.get("Patna")
+                lat, lon = coords
+                resolved_city = city.capitalize()
+                resolved_admin = state
+                country_name = "India"
+
+            try:
                 # Perform Forecast Request with both Daily and Hourly resolution
                 forecast_url = (
                     f"https://api.open-meteo.com/v1/forecast?"
@@ -159,8 +189,45 @@ class WebSearchService:
                 current = wx_json.get("current", {})
                 tz = wx_json.get("timezone", "Asia/Kolkata")
 
-                # Read tomorrow's index
-                t_idx = 1 if len(daily.get("time", [])) > 1 else 0
+                # Configure daily index and hourly offset based on date_ref using normalized temporal mapping
+                DATE_REF_MAP = {
+                    "today": (0, 0, "Today"),
+                    "tomorrow": (1, 1, "Tomorrow"),
+                    "day_after_tomorrow": (2, 2, "Day after tomorrow"),
+                    "yesterday": (-1, 0, "Yesterday"),
+                    "day_before_yesterday": (-2, 0, "Day before yesterday")
+                }
+                norm_ref = date_ref.lower().replace("-", "_").replace(" ", "_") if date_ref else "tomorrow"
+                if norm_ref in DATE_REF_MAP:
+                    day_offset, default_idx, date_title = DATE_REF_MAP[norm_ref]
+                else:
+                    day_offset, default_idx, date_title = (1, 1, "Tomorrow")
+
+                # NEGATIVE TEMPORAL OFFSET RULE:
+                # Historical weather data for past dates (yesterday, day before yesterday) must NOT map to today's forecast data.
+                if day_offset < 0:
+                    summary = f"Historical weather data for {date_title.lower()} in {resolved_city}, {resolved_admin} is not available in the live forecast service. Please check current or upcoming dates (today, tomorrow, or day after tomorrow)."
+                    sources.append(SourceItem(title="Open-Meteo Weather API", url="https://open-meteo.com", issuing_authority="Open-Meteo Global Weather Service", last_verified="Updated just now"))
+                    weather_data = {
+                        "city": resolved_city,
+                        "admin_region": resolved_admin,
+                        "country": country_name,
+                        "time_period": time_period,
+                        "date_reference": norm_ref,
+                        "day_offset": day_offset,
+                        "tool_day_index": -1,
+                        "is_historical": True,
+                        "timezone": tz,
+                        "source_name": "Open-Meteo Weather API",
+                        "source_url": "https://open-meteo.com"
+                    }
+                    return summary, sources, missing_info, weather_data
+
+                max_days = len(daily.get("time", []))
+                t_idx = day_offset if (max_days > 0 and day_offset < max_days) else (default_idx if default_idx < max_days else 0)
+
+                max_hourly = len(hourly.get("temperature_2m", []))
+                day_start_hour = t_idx * 24 if (max_hourly >= (t_idx + 1) * 24) else 0
 
                 # Detect if query specifies a time period (morning, afternoon, evening, night)
                 if not time_period:
@@ -178,9 +245,6 @@ class WebSearchService:
                     time_period = "night"
 
                 if time_period and hourly.get("temperature_2m"):
-                    # Tomorrow's hours range from hour index 24 to 47
-                    day_start_hour = 24 if len(hourly.get("temperature_2m", [])) >= 48 else 0
-                    
                     if time_period == "morning":
                         start_h, end_h, period_label = 6, 11, "Morning (6:00 AM – 11:59 AM)"
                     elif time_period == "afternoon":
@@ -205,21 +269,7 @@ class WebSearchService:
                         condition_desc = WMO_WEATHER_CODES.get(peak_wmo, "Partly cloudy ⛅")
                         wind_speed = round(max(h_winds)) if h_winds else 12
 
-                        if time_period == "morning":
-                            period_phrase = "in the morning"
-                            period_header = "Morning forecast (6:00 AM – 11:59 AM)"
-                        elif time_period == "afternoon":
-                            period_phrase = "during the afternoon"
-                            period_header = "Afternoon forecast (12:00 PM – 4:59 PM)"
-                        elif time_period == "night":
-                            period_phrase = "overnight"
-                            period_header = "Night forecast (9:00 PM – 11:59 PM)"
-                        elif time_period == "evening":
-                            period_phrase = "in the evening"
-                            period_header = "Evening forecast (5:00 PM – 8:59 PM)"
-                        else:
-                            period_phrase = "during the day"
-                            period_header = "Daily forecast (24-hour total)"
+                        period_phrase = f"in the {time_period}" if time_period != "night" else "overnight"
 
                         if rain_prob > 40:
                             advice = f"Expect rain {period_phrase}. Carry an umbrella if traveling."
@@ -227,8 +277,8 @@ class WebSearchService:
                             advice = f"Rain is less likely {period_phrase}. Favorable conditions expected."
 
                         summary = (
-                            f"🌧️ Tomorrow {time_period.title() if time_period else ''} in {resolved_city}, {resolved_admin}\n\n"
-                            f"{period_header}:\n"
+                            f"🌧️ {date_title} {time_period.title() if time_period else ''} in {resolved_city}, {resolved_admin}\n\n"
+                            f"{period_label}:\n"
                             f"• Rain Probability: {rain_prob}%\n"
                             f"• Expected Temp: {temp_avg}°C\n"
                             f"• Conditions: {condition_desc}\n"
@@ -241,6 +291,9 @@ class WebSearchService:
                             "admin_region": resolved_admin,
                             "country": country_name,
                             "time_period": time_period,
+                            "date_reference": norm_ref,
+                            "day_offset": day_offset,
+                            "tool_day_index": t_idx,
                             "temp_min": temp_avg,
                             "temp_max": temp_avg,
                             "rain_probability": rain_prob,
@@ -278,7 +331,7 @@ class WebSearchService:
                 advice = "Carry an umbrella if you're heading out." if rain_prob > 40 else "Weather looks favorable for outdoor activities."
 
                 summary = (
-                    f"🌧️ Tomorrow in {resolved_city}, {resolved_admin}\n\n"
+                    f"🌧️ {date_title} in {resolved_city}, {resolved_admin}\n\n"
                     f"Daily forecast (24-hour total):\n"
                     f"• Rain Probability: {rain_prob}%\n"
                     f"• Temperature Range: {temp_min}°C – {temp_max}°C\n"
@@ -291,6 +344,10 @@ class WebSearchService:
                     "city": resolved_city,
                     "admin_region": resolved_admin,
                     "country": country_name,
+                    "time_period": time_period,
+                    "date_reference": norm_ref,
+                    "day_offset": day_offset,
+                    "tool_day_index": t_idx,
                     "temp_min": temp_min,
                     "temp_max": temp_max,
                     "rain_probability": rain_prob,

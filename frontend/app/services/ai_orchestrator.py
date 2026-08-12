@@ -59,17 +59,33 @@ class AIOrchestrator:
             query_to_search = sem_res.entities.get("search_rewrite") or sem_res.normalized_query or request.message
             req_time_period = sem_res.entities.get("time_period")
             requested_location = sem_res.entities.get("city") or sem_res.entities.get("location")
+            req_date_ref = sem_res.entities.get("date_reference") or sem_res.entities.get("time") or "tomorrow"
+
+            DATE_REF_MAP = {
+                "today": (0, "Today"),
+                "tomorrow": (1, "Tomorrow"),
+                "day_after_tomorrow": (2, "Day after tomorrow"),
+                "yesterday": (-1, "Yesterday"),
+                "day_before_yesterday": (-2, "Day before yesterday")
+            }
+            norm_req_date = req_date_ref.lower().replace("-", "_").replace(" ", "_")
+            req_day_offset, date_label = DATE_REF_MAP.get(norm_req_date, (1, "Tomorrow"))
+
             summary, web_sources, web_missing, weather_payload = web_search_service.process_web_or_weather_query(
                 query=query_to_search,
                 user_context=request.user_context,
                 time_period=req_time_period,
-                location=requested_location
+                location=requested_location,
+                date_reference=norm_req_date
             )
 
             # TOOL VALIDATION RULE:
-            # For every weather request, verify requested_location vs tool_location
+            # Verify requested_location vs tool_location AND requested_date_reference vs tool_date_reference
             val_status = "PASSED"
             tool_city = weather_payload.get("city") if weather_payload else None
+            tool_date_ref = weather_payload.get("date_reference") if weather_payload else None
+            tool_day_idx = weather_payload.get("tool_day_index") if weather_payload else None
+
             if requested_location and tool_city:
                 req_norm = requested_location.lower().replace(" ", "")
                 tool_norm = tool_city.lower().replace(" ", "")
@@ -77,6 +93,13 @@ class AIOrchestrator:
                     val_status = "FAILED"
                     summary = f"Could not retrieve verified weather forecast for '{requested_location}'."
                     weather_payload = None
+
+            if norm_req_date and tool_date_ref and norm_req_date.lower() != tool_date_ref.lower():
+                val_status = "FAILED"
+                summary = f"Could not retrieve verified weather forecast for '{requested_location or 'requested location'}' on {date_label.lower()}."
+                weather_payload = None
+
+            validated_date = tool_date_ref if (val_status == "PASSED" and weather_payload) else "FAILED"
 
             situation = Situation(summary=summary, extracted_facts=extracted_facts, primary_intent=primary_intent, weather_data=weather_payload)
             sources = web_sources
@@ -95,6 +118,7 @@ class AIOrchestrator:
                     active_domain="WEATHER",
                     location=weather_payload.get("city"),
                     time_period=sem_res.entities.get("time_period"),
+                    date_reference=weather_payload.get("date_reference", norm_req_date),
                     tool_used="Open-Meteo Weather API"
                 )
             else:
@@ -108,6 +132,11 @@ class AIOrchestrator:
             tool_args = {
                 "requested_location": requested_location,
                 "resolved_location": weather_payload.get("city") if weather_payload else requested_location,
+                "requested_date_reference": norm_req_date,
+                "resolved_date_reference": tool_date_ref or norm_req_date,
+                "requested_day_offset": req_day_offset,
+                "tool_day_index": tool_day_idx if tool_day_idx is not None else req_day_offset,
+                "validated_date": validated_date,
                 "time_period": req_time_period,
                 "query": query_to_search
             }

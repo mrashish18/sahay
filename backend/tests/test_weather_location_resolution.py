@@ -168,3 +168,104 @@ def test_26_stale_user_context_multi_turn_sequence():
         assert exp_city in r.situation.summary, f"Failed on '{msg}' with user_context={ctx}: expected {exp_city} in {r.situation.summary}"
         assert r.decision_metadata.validation_status == "PASSED"
         assert r.decision_metadata.selected_tool == "weather_forecast"
+
+def test_27_temporal_precedence_sequence():
+    # 1. tomorrow -> tomorrow
+    cid1 = "w27_1"
+    ai_orchestrator.process_request(ChatRequest(message="will tomorrow rain in Patna", conversation_id=cid1))
+    r1 = ai_orchestrator.process_request(ChatRequest(message="will tomorrow rain in Patna", conversation_id=cid1))
+    assert "Tomorrow" in r1.situation.summary and r1.decision_metadata.validation_status == "PASSED"
+
+    # 2. today -> today
+    cid2 = "w27_2"
+    ai_orchestrator.process_request(ChatRequest(message="will today rain in Patna", conversation_id=cid2))
+    r2 = ai_orchestrator.process_request(ChatRequest(message="will today rain in Patna", conversation_id=cid2))
+    assert "Today" in r2.situation.summary and r2.decision_metadata.validation_status == "PASSED"
+
+    # 3. tomorrow -> today
+    cid3 = "w27_3"
+    ai_orchestrator.process_request(ChatRequest(message="will tomorrow rain in Patna", conversation_id=cid3))
+    r3 = ai_orchestrator.process_request(ChatRequest(message="will today rain in Patna", conversation_id=cid3))
+    assert "Today" in r3.situation.summary and r3.decision_metadata.validation_status == "PASSED"
+
+    # 4. today -> tomorrow
+    cid4 = "w27_4"
+    ai_orchestrator.process_request(ChatRequest(message="will today rain in Patna", conversation_id=cid4))
+    r4 = ai_orchestrator.process_request(ChatRequest(message="will tomorrow rain in Patna", conversation_id=cid4))
+    assert "Tomorrow" in r4.situation.summary and r4.decision_metadata.validation_status == "PASSED"
+
+    # 5. tomorrow -> day after tomorrow
+    cid5 = "w27_5"
+    ai_orchestrator.process_request(ChatRequest(message="will tomorrow rain in Patna", conversation_id=cid5))
+    r5 = ai_orchestrator.process_request(ChatRequest(message="will day after tomorrow rain in Patna", conversation_id=cid5))
+    assert "Day after tomorrow" in r5.situation.summary and r5.decision_metadata.validation_status == "PASSED"
+
+    # 6. day after tomorrow -> today
+    cid6 = "w27_6"
+    ai_orchestrator.process_request(ChatRequest(message="will day after tomorrow rain in Patna", conversation_id=cid6))
+    r6 = ai_orchestrator.process_request(ChatRequest(message="will today rain in Patna", conversation_id=cid6))
+    assert "Today" in r6.situation.summary and r6.decision_metadata.validation_status == "PASSED"
+
+    # 7. day after tomorrow -> tomorrow
+    cid7 = "w27_7"
+    ai_orchestrator.process_request(ChatRequest(message="will day after tomorrow rain in Patna", conversation_id=cid7))
+    r7 = ai_orchestrator.process_request(ChatRequest(message="will tomorrow rain in Patna", conversation_id=cid7))
+    assert "Tomorrow" in r7.situation.summary and r7.decision_metadata.validation_status == "PASSED"
+
+    # 8. yesterday
+    cid8 = "w27_8"
+    r8 = ai_orchestrator.process_request(ChatRequest(message="did it rain yesterday in Patna", conversation_id=cid8))
+    assert "Historical weather data for yesterday" in r8.situation.summary and r8.decision_metadata.validation_status == "PASSED"
+
+    # 9. day before yesterday
+    cid9 = "w27_9"
+    r9 = ai_orchestrator.process_request(ChatRequest(message="did it rain day before yesterday in Patna", conversation_id=cid9))
+    assert "Historical weather data for day before yesterday" in r9.situation.summary and r9.decision_metadata.validation_status == "PASSED"
+
+    # 10. "what about tomorrow?"
+    cid10 = "w27_10"
+    ai_orchestrator.process_request(ChatRequest(message="will today rain in Chennai", conversation_id=cid10))
+    r10 = ai_orchestrator.process_request(ChatRequest(message="what about tomorrow?", conversation_id=cid10))
+    assert "Tomorrow" in r10.situation.summary and "Chennai" in r10.situation.summary
+
+    # 11. "what about today?"
+    cid11 = "w27_11"
+    ai_orchestrator.process_request(ChatRequest(message="will tomorrow rain in Chennai", conversation_id=cid11))
+    r11 = ai_orchestrator.process_request(ChatRequest(message="what about today?", conversation_id=cid11))
+    assert "Today" in r11.situation.summary and "Chennai" in r11.situation.summary
+
+    # 12. "what about the weather?" inherits previous date only if valid
+    cid12 = "w27_12"
+    ai_orchestrator.process_request(ChatRequest(message="will day after tomorrow rain in Chennai", conversation_id=cid12))
+    r12 = ai_orchestrator.process_request(ChatRequest(message="what about the weather?", conversation_id=cid12))
+    assert "Day after tomorrow" in r12.situation.summary and "Chennai" in r12.situation.summary
+
+    # 13. location switch + date switch: Chennai/tomorrow -> Patna/today
+    cid13 = "w27_13"
+    ai_orchestrator.process_request(ChatRequest(message="will tomorrow rain in Chennai", conversation_id=cid13))
+    r13 = ai_orchestrator.process_request(ChatRequest(message="will today rain in Patna", conversation_id=cid13))
+    assert "Today" in r13.situation.summary and "Patna" in r13.situation.summary
+
+    # 14. date switch without location: Chennai/tomorrow -> today
+    cid14 = "w27_14"
+    ai_orchestrator.process_request(ChatRequest(message="will tomorrow rain in Chennai", conversation_id=cid14))
+    r14 = ai_orchestrator.process_request(ChatRequest(message="what about today?", conversation_id=cid14))
+    assert "Today" in r14.situation.summary and "Chennai" in r14.situation.summary
+
+    # 15. location switch without date: Chennai/tomorrow -> Patna/tomorrow
+    cid15 = "w27_15"
+    ai_orchestrator.process_request(ChatRequest(message="will tomorrow rain in Chennai", conversation_id=cid15))
+    r15 = ai_orchestrator.process_request(ChatRequest(message="weather in Patna", conversation_id=cid15))
+    assert "Tomorrow" in r15.situation.summary and "Patna" in r15.situation.summary
+
+    # 16. repeated identical date query must be stable
+    cid16 = "w27_16"
+    for _ in range(3):
+        r16 = ai_orchestrator.process_request(ChatRequest(message="will day after tomorrow rain in Triveniganj", conversation_id=cid16))
+        assert "Day after tomorrow" in r16.situation.summary and "Triveniganj" in r16.situation.summary
+
+def test_28_ambiguous_location_clarification():
+    cid = "w28"
+    r = ai_orchestrator.process_request(ChatRequest(message="how about Chennai?", conversation_id=cid))
+    assert r.flow == FlowType.AMBIGUOUS
+    assert "What would you like to know about Chennai — weather, public services, or something else?" in r.situation.summary
