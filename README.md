@@ -128,7 +128,114 @@ Citizens seeking public assistance or emergency disaster aid face severe adminis
 
 ---
 
-## 🏗️ 6. Technical Architecture
+## 🎯 6. Judge Examples — Try These Live
+
+Try Sahay directly with natural-language questions in the live demo. The examples below cover the core capabilities demonstrated in the live production system.
+
+### 🌦️ Weather & Location Intelligence
+> **Will tomorrow rain in Patna?**
+
+> **Will today rain in Chennai?**
+
+> **Will day after tomorrow rain in Triveniganj?**
+
+> **Will day after tomorrow rain in UP?**
+
+> **Will day after tomorrow rain in MADRAS?**
+
+> **Will day after tomorrow rain in Darbhangha?**
+
+#### Verified Location Alias Resolution
+| User Input | Resolved Location | Administrative Region | Country |
+|---|---|---|---|
+| `UP` | **Uttar Pradesh** | Representative forecast (`Lucknow region`) | India |
+| `MADRAS` | **Chennai** | Tamil Nadu | India |
+| `Darbhangha` | **Darbhanga** | Bihar | India |
+| `Bombay` | **Mumbai** | Maharashtra | India |
+| `Calcutta` | **Kolkata** | West Bengal | India |
+| `Bangalore` | **Bengaluru** | Karnataka | India |
+
+---
+
+### 🏛️ Public Services & Government Assistance
+> **I need food assistance in Bihar.**
+
+> **I need help finding government assistance.**
+
+> **What government support is available for my family?**
+
+> **I need help with a government scheme.**
+
+---
+
+### ✅ Eligibility Evaluation
+> **Am I eligible for food assistance?**
+
+> **What are the eligibility requirements?**
+
+> **Can you check whether I qualify?**
+
+> **What information do you need to check my eligibility?**
+
+---
+
+### 📄 Documents & Requirements
+> **What documents do I need?**
+
+> **What documents are required for this service?**
+
+> **What should I prepare before applying?**
+
+---
+
+### 🚨 Crisis & Emergency Assistance
+> **There is a flood near me. What should I do?**
+
+> **My house was damaged by flooding in Bihar and we have nowhere to stay tonight.**
+
+> **Where can I get emergency help?**
+
+> **What should I do after being displaced by a disaster?**
+
+---
+
+### 💬 Multi-Turn Conversational Sequences
+*Use these queries sequentially in the same conversation session to test Sahay's context retention and topic state handling:*
+
+#### Sequence A — Weather Context & Location Switching
+> **Will tomorrow rain in Chennai?**
+
+> **What about tomorrow?**
+
+> **Will today rain in Chennai?**
+
+> **How about Patna?**
+
+*Demonstrates location switching, temporal updates, and contextual follow-up handling.*
+
+#### Sequence B — Public Service & Eligibility Follow-Up
+> **I need food assistance in Bihar.**
+
+> **Am I eligible?**
+
+> **What documents do I need?**
+
+*Demonstrates topic-scoped context across eligibility and document follow-ups.*
+
+---
+
+### 🛡️ Transparent Fallback & Safe Failure
+> **Will day after tomorrow rain in Xyzabc12345?**
+
+*When a location cannot be confidently resolved, Sahay asks for clarification (`validation_status = "FAILED"`) or returns a transparent failure message rather than silently inheriting a stale previous location.*
+
+---
+
+> **💡 Judge Tip:** Start with a weather question, switch the location, change the requested date, and then try a public-service or crisis question in the same session to see Sahay's contextual decision pipeline in action.
+
+---
+
+## 🏗️ 7. Technical Architecture
 
 SAHAY is built as a high-performance full-stack application. The **React + Vite** frontend is served alongside a **FastAPI** backend via same-origin `/api/*` serverless routes on Vercel.
 
@@ -162,7 +269,7 @@ SAHAY is built as a high-performance full-stack application. The **React + Vite*
 
 ---
 
-## 🧠 7. Conversational Intelligence & Pipeline
+## 🧠 8. Conversational Intelligence & Pipeline
 
 The backend orchestrates queries through modular, decoupled services:
 
@@ -179,7 +286,7 @@ The backend orchestrates queries through modular, decoupled services:
 
 ---
 
-## 🌍 8. Universal Location Intelligence
+## 🌍 9. Universal Location Intelligence
 
 Supports arbitrary geographic entities through extraction, normalization, geocoding, candidate ranking, and clarification fallback, subject to the coverage of the underlying geographic data provider.
 
@@ -193,7 +300,7 @@ Supports arbitrary geographic entities through extraction, normalization, geocod
 
 ---
 
-## 🛡️ 9. Security & Trust Engineering
+## 🛡️ 10. Security & Trust Engineering
 
 - **Production Secret Validation:** Enforces strict validation of `SECRET_KEY` and production configuration.
 - **Deterministic Legal Rules:** Statutory eligibility logic runs exclusively in Python code, preventing LLM hallucination of benefits.
@@ -205,7 +312,7 @@ Supports arbitrary geographic entities through extraction, normalization, geocod
 
 ---
 
-## ✅ 10. Verification & Quality Assurance
+## ✅ 11. Verification & Quality Assurance
 
 All engineering benchmarks have been empirically verified:
 
@@ -220,7 +327,7 @@ All engineering benchmarks have been empirically verified:
 
 ---
 
-## 📁 11. Project Structure
+## 📁 12. Project Structure
 
 ```text
 sahay/
@@ -245,7 +352,7 @@ sahay/
 
 ---
 
-## ⚡ 12. Local Setup & Installation
+## ⚡ 13. Local Setup & Installation
 
 ### Prerequisites
 - Python 3.12
@@ -278,7 +385,7 @@ Access the application locally at `http://localhost:5173`.
 
 ---
 
-## 🔌 13. API Reference
+## 🔌 14. API Reference
 
 ### Primary Chat Endpoint: `POST /api/v1/chat`
 
@@ -312,7 +419,7 @@ Access the application locally at `http://localhost:5173`.
 
 ---
 
-## 🏆 14. Hackathon Highlights
+## 🏆 15. Hackathon Highlights
 
 - 🎯 **High Social Impact:** Direct assistance for underprivileged citizens navigating public welfare and emergency crises.
 - ⚡ **Zero Hallucination Eligibility:** Deterministic Python rule evaluation eliminates false promises of government benefits.
@@ -322,7 +429,7 @@ Access the application locally at `http://localhost:5173`.
 
 ---
 
-## 🔭 15. Future Scope
+## 🔭 16. Future Scope
 
 - 🌍 **Expanded Welfare Schemes:** Integrate additional state-level schemes across India and global municipal jurisdictions.
 - 🗣️ **Voice & Regional NLU:** Add speech-to-text and multi-lingual voice interaction in regional Indian languages.
