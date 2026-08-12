@@ -40,6 +40,11 @@ class EntityProvenance(str, Enum):
     TOOL_RESULT = "tool_result"
     SYSTEM_DEFAULT = "system_default"
 
+class MissingInfoItem(BaseModel):
+    field: str = Field(..., description="Key identifier for missing attribute")
+    question: str = Field(..., description="User-facing prompt question to clarify the missing fact")
+    importance: str = Field(default="high", description="Priority level: high, medium, low")
+
 class ConversationDecision(BaseModel):
     intent: str = Field(..., description="Classified intent (e.g. WEATHER, PUBLIC_SERVICE, CRISIS)")
     sub_intent: Optional[str] = Field(None, description="Classified sub-intent (e.g. FORECAST, FOOD_ASSISTANCE, FLOOD)")
@@ -70,11 +75,6 @@ class Urgency(BaseModel):
     level: UrgencyLevel = Field(..., description="Assessed urgency rating")
     score: float = Field(..., ge=0.0, le=1.0, description="Confidence/severity score between 0.0 and 1.0")
     reasoning: str = Field(..., description="Justification for the urgency rating")
-
-class MissingInfoItem(BaseModel):
-    field: str = Field(..., description="Key identifier for missing attribute")
-    question: str = Field(..., description="User-facing prompt question to clarify the missing fact")
-    importance: str = Field(default="high", description="Priority level: high, medium, low")
 
 class RecommendationItem(BaseModel):
     scheme_id: str = Field(..., description="Unique scheme identifier")
